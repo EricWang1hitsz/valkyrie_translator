@@ -6,7 +6,7 @@ Forwards IMU, force/torque, and joint state over LCM in appropriate status messa
 
 Runs at 500hz in the Valkyrie ros_control main loop as a plugin.
 
-Significant reference to 
+Significant reference to
 https://github.com/NASA-JSC-Robotics/valkyrie/wiki/Running-Controllers-on-Valkyrie
 
 gizatt@mit.edu, 201601**
@@ -23,8 +23,8 @@ namespace valkyrie_translator
    LCM2ROSControl::~LCM2ROSControl()
    {}
 
-    bool LCM2ROSControl::initRequest(hardware_interface::RobotHW* robot_hw, 
-                             ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh, 
+    bool LCM2ROSControl::initRequest(hardware_interface::RobotHW* robot_hw,
+                             ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh,
                              std::set<std::string>& claimed_resources)
     {
         // check if construction finished cleanly
@@ -41,7 +41,7 @@ namespace valkyrie_translator
           return false;
         }
         handler_ = std::shared_ptr<LCM2ROSControl_LCMHandler>(new LCM2ROSControl_LCMHandler(*this));
-        
+
         // get a pointer to the effort interface
         hardware_interface::EffortJointInterface* effort_hw = robot_hw->get<hardware_interface::EffortJointInterface>();
         if (!effort_hw)
@@ -360,7 +360,7 @@ namespace valkyrie_translator
    void LCM2ROSControl::stopping(const ros::Time& time)
    {}
 
-   LCM2ROSControl_LCMHandler::LCM2ROSControl_LCMHandler(LCM2ROSControl& parent) : parent_(parent) { 
+   LCM2ROSControl_LCMHandler::LCM2ROSControl_LCMHandler(LCM2ROSControl& parent) : parent_(parent) {
       lcm_ = std::shared_ptr<lcm::LCM>(new lcm::LCM);
       if (!lcm_->good())
       {
@@ -369,17 +369,15 @@ namespace valkyrie_translator
       lcm_->subscribe("ROBOT_COMMAND", &LCM2ROSControl_LCMHandler::jointCommandHandler, this);
    }
    LCM2ROSControl_LCMHandler::~LCM2ROSControl_LCMHandler() {}
-   
+
    void LCM2ROSControl_LCMHandler::jointCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
                                const drc::atlas_command_t* msg) {
-      //ROS_INFO("Got new setpoints\n");
-      // TODO: zero non-mentioned joints for safety? 
-      
-      for(unsigned int i = 0; i < msg->num_joints; ++i){
-        //ROS_INFO("Joint %s ", msg->joint_commands[i].joint_name.c_str());`
+      // TODO: zero non-mentioned joints for safety?
+
+      for (unsigned int i = 0; i < msg->num_joints; ++i) {
+        // ROS_WARN("Joint %s ", msg->joint_names[i].c_str());
         auto search = parent_.latest_commands.find(msg->joint_names[i]);
         if (search != parent_.latest_commands.end()) {
-          //ROS_INFO("found in keys");
           joint_command& command = parent_.latest_commands[msg->joint_names[i]];
           command.position = msg->position[i];
           command.velocity = msg->velocity[i];
@@ -393,7 +391,7 @@ namespace valkyrie_translator
           command.ff_f_d = msg->ff_f_d[i];
           command.ff_const = msg->ff_const[i];
         } else {
-          //ROS_INFO("had no match.");
+          // ROS_WARN("had no match.");
         }
       }
    }

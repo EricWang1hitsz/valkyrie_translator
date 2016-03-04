@@ -74,6 +74,38 @@ namespace valkyrie_translator
         claimed_resources.insert(effort_hw_claims.begin(), effort_hw_claims.end());
         effort_hw->clearClaims();
 
+        // get a pointer to the position interface
+        hardware_interface::PositionJointInterface* position_hw = robot_hw->get<hardware_interface::PositionJointInterface>();
+        if (!position_hw)
+        {
+          ROS_ERROR("This controller requires a hardware interface of type hardware_interface::PositionJointInterface.");
+          return false;
+        }
+
+        position_hw->clearClaims();
+        const std::vector<std::string>& positionNames = position_hw->getNames();
+        // initialize command buffer for each joint we found on the HW
+        for(unsigned int i=0; i<positionNames.size(); i++)
+        {
+          positionJointHandles[positionNames[i]] = position_hw->getHandle(positionNames[i]);
+          latest_commands[positionNames[i]] = joint_command();
+          latest_commands[positionNames[i]].position = 0.0;
+          latest_commands[positionNames[i]].velocity = 0.0;
+          latest_commands[positionNames[i]].effort = 0.0;
+          latest_commands[positionNames[i]].k_q_p = 0.0;
+          latest_commands[positionNames[i]].k_q_i = 0.0;
+          latest_commands[positionNames[i]].k_qd_p = 0.0;
+          latest_commands[positionNames[i]].k_f_p = 0.0;
+          latest_commands[positionNames[i]].ff_qd = 0.0;
+          latest_commands[positionNames[i]].ff_qd_d = 0.0;
+          latest_commands[positionNames[i]].ff_f_d = 0.0;
+          latest_commands[positionNames[i]].ff_const = 0.0;
+        }
+
+        auto position_hw_claims = position_hw->getClaims();
+        claimed_resources.insert(position_hw_claims.begin(), position_hw_claims.end());
+        position_hw->clearClaims();
+
         // get a pointer to the imu interface
         hardware_interface::ImuSensorInterface* imu_hw = robot_hw->get<hardware_interface::ImuSensorInterface>();
         if (!imu_hw)

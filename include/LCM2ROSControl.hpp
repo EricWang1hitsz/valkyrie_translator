@@ -80,6 +80,7 @@ namespace valkyrie_translator
         std::shared_ptr<LCM2ROSControl_LCMHandler> handler_;
 
         std::map<std::string, hardware_interface::JointHandle> effortJointHandles;
+        std::map<std::string, hardware_interface::JointHandle> positionJointHandles;
         std::map<std::string, hardware_interface::ImuSensorHandle> imuSensorHandles;
         std::map<std::string, hardware_interface::ForceTorqueSensorHandle> forceTorqueHandles;
 

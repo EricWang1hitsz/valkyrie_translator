@@ -167,23 +167,25 @@ namespace valkyrie_translator
       last_update = time;
       int64_t utime = time.toSec() * 1000000.;
 
+      size_t numberOfJointInterfaces = effortJointHandles.size() + positionJointHandles.size();
+
       // push out the joint states for all joints we see advertised
       // and also the commanded torques, for reference
       bot_core::joint_state_t lcm_pose_msg;
       lcm_pose_msg.utime = utime;
-      lcm_pose_msg.num_joints = effortJointHandles.size();
-      lcm_pose_msg.joint_name.assign(effortJointHandles.size(), "");
-      lcm_pose_msg.joint_position.assign(effortJointHandles.size(), 0.);
-      lcm_pose_msg.joint_velocity.assign(effortJointHandles.size(), 0.);
-      lcm_pose_msg.joint_effort.assign(effortJointHandles.size(), 0.);
+      lcm_pose_msg.num_joints = numberOfJointInterfaces;
+      lcm_pose_msg.joint_name.assign(numberOfJointInterfaces, "");
+      lcm_pose_msg.joint_position.assign(numberOfJointInterfaces, 0.);
+      lcm_pose_msg.joint_velocity.assign(numberOfJointInterfaces, 0.);
+      lcm_pose_msg.joint_effort.assign(numberOfJointInterfaces, 0.);
 
       bot_core::joint_state_t lcm_commanded_msg;
       lcm_commanded_msg.utime = utime;
-      lcm_commanded_msg.num_joints = effortJointHandles.size();
-      lcm_commanded_msg.joint_name.assign(effortJointHandles.size(), "");
-      lcm_commanded_msg.joint_position.assign(effortJointHandles.size(), 0.);
-      lcm_commanded_msg.joint_velocity.assign(effortJointHandles.size(), 0.);
-      lcm_commanded_msg.joint_effort.assign(effortJointHandles.size(), 0.);
+      lcm_commanded_msg.num_joints = numberOfJointInterfaces;
+      lcm_commanded_msg.joint_name.assign(numberOfJointInterfaces, "");
+      lcm_commanded_msg.joint_position.assign(numberOfJointInterfaces, 0.);
+      lcm_commanded_msg.joint_velocity.assign(numberOfJointInterfaces, 0.);
+      lcm_commanded_msg.joint_effort.assign(numberOfJointInterfaces, 0.);
 
       drc::joint_angles_t lcm_torque_msg;
       lcm_torque_msg.robot_name = "val!";
@@ -196,11 +198,11 @@ namespace valkyrie_translator
       // assembling this to make director happy
       bot_core::robot_state_t lcm_state_msg;
       lcm_state_msg.utime = utime;
-      lcm_state_msg.num_joints = effortJointHandles.size();
-      lcm_state_msg.joint_name.assign(effortJointHandles.size(), "");
-      lcm_state_msg.joint_position.assign(effortJointHandles.size(), 0.);
-      lcm_state_msg.joint_velocity.assign(effortJointHandles.size(), 0.);
-      lcm_state_msg.joint_effort.assign(effortJointHandles.size(), 0.);
+      lcm_state_msg.num_joints = numberOfJointInterfaces;
+      lcm_state_msg.joint_name.assign(numberOfJointInterfaces, "");
+      lcm_state_msg.joint_position.assign(numberOfJointInterfaces, 0.);
+      lcm_state_msg.joint_velocity.assign(numberOfJointInterfaces, 0.);
+      lcm_state_msg.joint_effort.assign(numberOfJointInterfaces, 0.);
       lcm_state_msg.pose.translation.x = 0.0;
       lcm_state_msg.pose.translation.y = 0.0;
       lcm_state_msg.pose.translation.z = 0.0;
@@ -215,6 +217,42 @@ namespace valkyrie_translator
       lcm_state_msg.twist.angular_velocity.y = 0.0;
       lcm_state_msg.twist.angular_velocity.z = 0.0;
 
+      // Iterate over all position-controlled joints
+      size_t positionJointIndex = effortJointHandles.size() + 0;
+      for (auto iter = positionJointHandles.begin(); iter != positionJointHandles.end(); iter++) {
+          double q = iter->second.getPosition();
+          double qd = iter->second.getVelocity();
+
+          joint_command& command = latest_commands[iter->first];
+          double position_to_go = command.position;
+
+          // TODO: check that desired q is within limits
+          if (fabs(position_to_go) < M_PI) { // TODO: check joint limit!
+            iter->second.setCommand(position_to_go);
+          } else{
+            ROS_INFO("Dangerous latest_commands[%s]: %f\n", iter->first.c_str(), position_to_go);
+            // iter->second.setCommand(0.0); // Don't do anything!
+          }
+          // TODO: we can't directly iterate like this, better match differently!!
+
+          lcm_pose_msg.joint_name[positionJointIndex] = iter->first;
+          lcm_pose_msg.joint_position[positionJointIndex] = q;
+          lcm_pose_msg.joint_velocity[positionJointIndex] = qd;
+
+          lcm_state_msg.joint_name[positionJointIndex] = iter->first;
+          lcm_state_msg.joint_position[positionJointIndex] = q;
+          lcm_state_msg.joint_velocity[positionJointIndex] = qd;
+
+          // republish to guarantee sync
+          lcm_commanded_msg.joint_name[positionJointIndex] = iter->first;
+          lcm_commanded_msg.joint_position[positionJointIndex] = command.position;
+          lcm_commanded_msg.joint_velocity[positionJointIndex] = command.velocity;
+          lcm_commanded_msg.joint_effort[positionJointIndex] = command.effort;
+
+          positionJointIndex++;
+      }
+
+      // Iterate over all effort-controlled joints
       int i = 0;
       for(auto iter = effortJointHandles.begin(); iter != effortJointHandles.end(); iter++)
       {

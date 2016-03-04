@@ -42,6 +42,17 @@ namespace valkyrie_translator
         }
         handler_ = std::shared_ptr<LCM2ROSControl_LCMHandler>(new LCM2ROSControl_LCMHandler(*this));
 
+        // Check which joints we have been assigned to
+        // If we have joints assigned to just us, claim those, otherwise claim all
+        std::vector<std::string> joint_names_;
+        if (!controller_nh.getParam("joints", joint_names_))
+          ROS_INFO_STREAM("Could not get assigned list of joints, will resume to claim all");
+
+        int n_joints_ = joint_names_.size();
+        bool use_joint_selection = true;
+        if (n_joints_ == 0)
+          use_joint_selection = false;
+
         // get a pointer to the effort interface
         hardware_interface::EffortJointInterface* effort_hw = robot_hw->get<hardware_interface::EffortJointInterface>();
         if (!effort_hw)
@@ -53,8 +64,11 @@ namespace valkyrie_translator
         effort_hw->clearClaims();
         const std::vector<std::string>& effortNames = effort_hw->getNames();
         // initialize command buffer for each joint we found on the HW
-        for(unsigned int i=0; i<effortNames.size(); i++)
+        for (unsigned int i=0; i<effortNames.size(); i++)
         {
+          if (use_joint_selection && std::find(joint_names_.begin(), joint_names_.end(), effortNames[i]) == joint_names_.end())
+            continue;
+
           effortJointHandles[effortNames[i]] = effort_hw->getHandle(effortNames[i]);
           latest_commands[effortNames[i]] = joint_command();
           latest_commands[effortNames[i]].position = 0.0;
@@ -87,6 +101,9 @@ namespace valkyrie_translator
         // initialize command buffer for each joint we found on the HW
         for(unsigned int i=0; i<positionNames.size(); i++)
         {
+          if (use_joint_selection && std::find(joint_names_.begin(), joint_names_.end(), positionNames[i]) == joint_names_.end())
+            continue;
+
           positionJointHandles[positionNames[i]] = position_hw->getHandle(positionNames[i]);
           latest_commands[positionNames[i]] = joint_command();
           latest_commands[positionNames[i]].position = 0.0;
@@ -118,7 +135,10 @@ namespace valkyrie_translator
         const std::vector<std::string>& imuNames = imu_hw->getNames();
         for(unsigned int i=0; i<imuNames.size(); i++)
         {
-             imuSensorHandles[imuNames[i]] = imu_hw->getHandle(imuNames[i]);
+          if (use_joint_selection && std::find(joint_names_.begin(), joint_names_.end(), imuNames[i]) == joint_names_.end())
+            continue;
+
+          imuSensorHandles[imuNames[i]] = imu_hw->getHandle(imuNames[i]);
         }
 
         auto imu_hw_claims = imu_hw->getClaims();
@@ -137,7 +157,10 @@ namespace valkyrie_translator
         const std::vector<std::string>& forceTorqueNames = forceTorque_hw->getNames();
         for(unsigned int i=0; i<forceTorqueNames.size(); i++)
         {
-             forceTorqueHandles[forceTorqueNames[i]] = forceTorque_hw->getHandle(forceTorqueNames[i]);
+          if (use_joint_selection && std::find(joint_names_.begin(), joint_names_.end(), forceTorqueNames[i]) == joint_names_.end())
+            continue;
+
+          forceTorqueHandles[forceTorqueNames[i]] = forceTorque_hw->getHandle(forceTorqueNames[i]);
         }
         auto forceTorque_hw_claims = forceTorque_hw->getClaims();
         claimed_resources.insert(forceTorque_hw_claims.begin(), forceTorque_hw_claims.end());

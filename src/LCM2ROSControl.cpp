@@ -169,6 +169,7 @@ namespace valkyrie_translator
 
       size_t numberOfJointInterfaces = effortJointHandles.size() + positionJointHandles.size();
 
+      // VAL_CORE_ROBOT_STATE
       // push out the joint states for all joints we see advertised
       // and also the commanded torques, for reference
       bot_core::joint_state_t lcm_pose_msg;
@@ -179,6 +180,7 @@ namespace valkyrie_translator
       lcm_pose_msg.joint_velocity.assign(numberOfJointInterfaces, 0.);
       lcm_pose_msg.joint_effort.assign(numberOfJointInterfaces, 0.);
 
+      // VAL_COMMAND_FEEDBACK
       bot_core::joint_state_t lcm_commanded_msg;
       lcm_commanded_msg.utime = utime;
       lcm_commanded_msg.num_joints = numberOfJointInterfaces;
@@ -187,6 +189,8 @@ namespace valkyrie_translator
       lcm_commanded_msg.joint_velocity.assign(numberOfJointInterfaces, 0.);
       lcm_commanded_msg.joint_effort.assign(numberOfJointInterfaces, 0.);
 
+      // VAL_COMMAND_FEEDBACK_TORQUE
+      // TODO: add the position elements here, even though they aren't torques
       drc::joint_angles_t lcm_torque_msg;
       lcm_torque_msg.robot_name = "val!";
       lcm_torque_msg.utime = utime;
@@ -194,6 +198,7 @@ namespace valkyrie_translator
       lcm_torque_msg.joint_name.assign(effortJointHandles.size(), "");
       lcm_torque_msg.joint_position.assign(effortJointHandles.size(), 0.);
 
+      // EST_ROBOT_STATE
       // need to decide what message we're really using for state. for now,
       // assembling this to make director happy
       bot_core::robot_state_t lcm_state_msg;

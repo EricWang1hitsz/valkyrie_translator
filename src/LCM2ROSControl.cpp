@@ -145,7 +145,11 @@ namespace valkyrie_translator
 
         // success
         state_ = INITIALIZED;
-        ROS_INFO("LCM2ROSCONTROL ON\n");
+        ROS_INFO_STREAM("LCM2ROSCONTROL ON with " << claimed_resources.size() << " claimed resources:" << std::endl
+            << forceTorque_hw_claims.size() << " force torque" << std::endl
+            << imu_hw_claims.size() << " IMUs" << std::endl
+            << effort_hw_claims.size() << " effort-controlled joints" << std::endl
+            << position_hw_claims.size() << " position-controlled joints" << std::endl);
         return true;
     }
 

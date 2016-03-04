@@ -222,8 +222,59 @@ namespace valkyrie_translator
       lcm_state_msg.twist.angular_velocity.y = 0.0;
       lcm_state_msg.twist.angular_velocity.z = 0.0;
 
+
+      // Iterate over all effort-controlled joints
+      size_t effortJointIndex = 0;
+      for(auto iter = effortJointHandles.begin(); iter != effortJointHandles.end(); iter++)
+      {
+          // see drc_joint_command_t.lcm for explanation of gains and
+          // force calculation.
+          double q = iter->second.getPosition();
+          double qd = iter->second.getVelocity();
+          double f = iter->second.getEffort();
+
+          joint_command& command = latest_commands[iter->first];
+          double command_effort =
+            command.k_q_p * ( command.position - q ) +
+            command.k_q_i * ( command.position - q ) * dt +
+            command.k_qd_p * ( command.velocity - qd) +
+            command.k_f_p * ( command.effort - f) +
+            command.ff_qd * ( qd ) +
+            command.ff_qd_d * ( command.velocity ) +
+            command.ff_f_d * ( command.effort ) +
+            command.ff_const;
+
+          if (fabs(command_effort) < 1000.){
+            iter->second.setCommand(command_effort);
+          } else{
+            ROS_INFO("Dangerous latest_commands[%s]: %f\n", iter->first.c_str(), command_effort);
+            iter->second.setCommand(0.0);
+          }
+
+          lcm_pose_msg.joint_name[effortJointIndex] = iter->first;
+          lcm_pose_msg.joint_position[effortJointIndex] = q;
+          lcm_pose_msg.joint_velocity[effortJointIndex] = qd;
+          lcm_pose_msg.joint_effort[effortJointIndex] = iter->second.getEffort(); // measured!
+
+          lcm_state_msg.joint_name[effortJointIndex] = iter->first;
+          lcm_state_msg.joint_position[effortJointIndex] = q;
+          lcm_state_msg.joint_velocity[effortJointIndex] = qd;
+          lcm_state_msg.joint_effort[effortJointIndex] = iter->second.getEffort(); // measured!
+
+          // republish to guarantee sync
+          lcm_commanded_msg.joint_name[effortJointIndex] = iter->first;
+          lcm_commanded_msg.joint_position[effortJointIndex] = command.position;
+          lcm_commanded_msg.joint_velocity[effortJointIndex] = command.velocity;
+          lcm_commanded_msg.joint_effort[effortJointIndex] = command.effort;
+
+          lcm_torque_msg.joint_name[effortJointIndex] = iter->first;
+          lcm_torque_msg.joint_position[effortJointIndex] = command_effort;
+
+          effortJointIndex++;
+      }
+
       // Iterate over all position-controlled joints
-      size_t positionJointIndex = effortJointHandles.size() + 0;
+      size_t positionJointIndex = effortJointIndex;
       for (auto iter = positionJointHandles.begin(); iter != positionJointHandles.end(); iter++) {
           double q = iter->second.getPosition();
           double qd = iter->second.getVelocity();
@@ -257,69 +308,20 @@ namespace valkyrie_translator
           positionJointIndex++;
       }
 
-      // Iterate over all effort-controlled joints
-      int i = 0;
-      for(auto iter = effortJointHandles.begin(); iter != effortJointHandles.end(); iter++)
-      {
-          // see drc_joint_command_t.lcm for explanation of gains and
-          // force calculation.
-          double q = iter->second.getPosition();
-          double qd = iter->second.getVelocity();
-          double f = iter->second.getEffort();
-
-          joint_command& command = latest_commands[iter->first];
-          double command_effort = 
-            command.k_q_p * ( command.position - q ) + 
-            command.k_q_i * ( command.position - q ) * dt + 
-            command.k_qd_p * ( command.velocity - qd) + 
-            command.k_f_p * ( command.effort - f) + 
-            command.ff_qd * ( qd ) + 
-            command.ff_qd_d * ( command.velocity ) + 
-            command.ff_f_d * ( command.effort ) + 
-            command.ff_const;
-
-          if (fabs(command_effort) < 1000.){
-            iter->second.setCommand(command_effort);
-          } else{
-            ROS_INFO("Dangerous latest_commands[%s]: %f\n", iter->first.c_str(), command_effort);
-            iter->second.setCommand(0.0);
-          }	
-
-          lcm_pose_msg.joint_name[i] = iter->first;
-          lcm_pose_msg.joint_position[i] = q;
-          lcm_pose_msg.joint_velocity[i] = qd;
-          lcm_pose_msg.joint_effort[i] = iter->second.getEffort(); // measured!
-
-          lcm_state_msg.joint_name[i] = iter->first;
-          lcm_state_msg.joint_position[i] = q;
-          lcm_state_msg.joint_velocity[i] = qd;
-          lcm_state_msg.joint_effort[i] = iter->second.getEffort(); // measured!
-
-
-          // republish to guarantee sync
-          lcm_commanded_msg.joint_name[i] = iter->first;
-          lcm_commanded_msg.joint_position[i] = command.position;
-          lcm_commanded_msg.joint_velocity[i] = command.velocity;
-          lcm_commanded_msg.joint_effort[i] = command.effort;
-
-          lcm_torque_msg.joint_name[i] = iter->first;
-          lcm_torque_msg.joint_position[i] = command_effort;
-
-          i++;
-      }   
       lcm_->publish("VAL_CORE_ROBOT_STATE", &lcm_pose_msg);
       lcm_->publish("VAL_COMMAND_FEEDBACK", &lcm_commanded_msg);
       lcm_->publish("VAL_COMMAND_FEEDBACK_TORQUE", &lcm_torque_msg);
       lcm_->publish("EST_ROBOT_STATE", &lcm_state_msg);
 
       // push out the measurements for all imus we see advertised
+      int i;
       for (auto iter = imuSensorHandles.begin(); iter != imuSensorHandles.end(); iter ++){
         bot_core::ins_t lcm_imu_msg;
         //lcm_imu_msg.utime = utime;
         std::ostringstream imuchannel;
         imuchannel << "VAL_IMU_" << iter->first;
         lcm_imu_msg.utime = utime;
-        for (i=0; i<3; i++){
+        for (int i=0; i<3; i++){
           lcm_imu_msg.quat[i]= iter->second.getOrientation()[i];
           lcm_imu_msg.gyro[i] = iter->second.getAngularVelocity()[i];
           lcm_imu_msg.accel[i] = iter->second.getLinearAcceleration()[i];

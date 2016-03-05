@@ -346,13 +346,24 @@ namespace valkyrie_translator
         std::ostringstream imuchannel;
         imuchannel << "VAL_IMU_" << iter->first;
         lcm_imu_msg.utime = utime;
-        for (int i=0; i<3; i++){
-          lcm_imu_msg.quat[i]= iter->second.getOrientation()[i];
-          lcm_imu_msg.gyro[i] = iter->second.getAngularVelocity()[i];
-          lcm_imu_msg.accel[i] = iter->second.getLinearAcceleration()[i];
-          lcm_imu_msg.mag[i] = 0.0;
-        }
-        lcm_imu_msg.quat[3] = iter->second.getOrientation()[3];
+
+        lcm_imu_msg.quat[0]= iter->second.getOrientation()[0];
+        lcm_imu_msg.quat[1]= iter->second.getOrientation()[1];
+        lcm_imu_msg.quat[2]= iter->second.getOrientation()[2];
+        lcm_imu_msg.quat[3]= iter->second.getOrientation()[3];
+
+        lcm_imu_msg.gyro[0] = iter->second.getAngularVelocity()[0];
+        lcm_imu_msg.gyro[1] = iter->second.getAngularVelocity()[1];
+        lcm_imu_msg.gyro[2] = iter->second.getAngularVelocity()[2];
+
+        lcm_imu_msg.accel[0] = iter->second.getLinearAcceleration()[0];
+        lcm_imu_msg.accel[1] = iter->second.getLinearAcceleration()[1];
+        lcm_imu_msg.accel[2] = iter->second.getLinearAcceleration()[2];
+
+        lcm_imu_msg.mag[0] = 0.0; // TODO: to be revisited after IMU upgrade
+        lcm_imu_msg.mag[1] = 0.0;
+        lcm_imu_msg.mag[2] = 0.0;
+
         lcm_imu_msg.pressure = 0.0;
         lcm_imu_msg.rel_alt = 0.0;
 

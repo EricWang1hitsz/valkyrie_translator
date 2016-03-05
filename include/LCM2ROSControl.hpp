@@ -39,7 +39,7 @@ namespace valkyrie_translator
 
    class LCM2ROSControl;
 
-   /* Manages subscription for the LCM2ROSControl class. 
+   /* Manages subscription for the LCM2ROSControl class.
       Presently just a hack to resolve pluginlib compatibility issues... */
    class LCM2ROSControl_LCMHandler
    {
@@ -55,7 +55,7 @@ namespace valkyrie_translator
         // compatibility problems. Mysterious and scary...
         std::shared_ptr<lcm::LCM> lcm_;
    };
-   
+
    class LCM2ROSControl : public controller_interface::Controller<hardware_interface::EffortJointInterface>
    {
    public:
@@ -65,14 +65,14 @@ namespace valkyrie_translator
         void starting(const ros::Time& time);
         void update(const ros::Time& time, const ros::Duration& period);
         void stopping(const ros::Time& time);
-        
+
         // Public so it can be modified by the LCMHandler. Should eventually create
         // a friend class arrangement to make this private again.
         std::map<std::string, joint_command> latest_commands;
 
-   protected:        
-        virtual bool initRequest(hardware_interface::RobotHW* robot_hw, 
-                         ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh, 
+   protected:
+        virtual bool initRequest(hardware_interface::RobotHW* robot_hw,
+                         ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh,
                          std::set<std::string>& claimed_resources) override;
 
    private:
@@ -80,6 +80,7 @@ namespace valkyrie_translator
         std::shared_ptr<LCM2ROSControl_LCMHandler> handler_;
 
         std::map<std::string, hardware_interface::JointHandle> effortJointHandles;
+        std::map<std::string, hardware_interface::JointHandle> positionJointHandles;
         std::map<std::string, hardware_interface::ImuSensorHandle> imuSensorHandles;
         std::map<std::string, hardware_interface::ForceTorqueSensorHandle> forceTorqueHandles;
 

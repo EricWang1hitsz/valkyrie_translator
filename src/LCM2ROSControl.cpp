@@ -1,7 +1,8 @@
 /**
 
 Plugin to feed core state and commands to and from the Valkyrie ros_control API.
-Listens for torque commands, and feeds them to the robot.
+Listens for torque commands for the torque controlled joints, and position commands
+for the position controlled joints, and feeds them to the robot.
 Forwards IMU, force/torque, and joint state over LCM in appropriate status messages.
 
 Runs at 500hz in the Valkyrie ros_control main loop as a plugin.
@@ -10,8 +11,9 @@ Significant reference to
 https://github.com/NASA-JSC-Robotics/valkyrie/wiki/Running-Controllers-on-Valkyrie
 
 gizatt@mit.edu, 201601**
+wolfgang.merkt@ed.ac.uk, 201603**
 
-**/
+ **/
 
 #include <LCM2ROSControl.hpp>
 

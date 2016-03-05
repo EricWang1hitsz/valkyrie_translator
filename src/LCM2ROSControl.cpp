@@ -50,7 +50,7 @@ namespace valkyrie_translator
         if (!controller_nh.getParam("joints", joint_names_))
           ROS_INFO_STREAM("Could not get assigned list of joints, will resume to claim all");
 
-        int n_joints_ = joint_names_.size();
+        auto n_joints_ = joint_names_.size();
         bool use_joint_selection = true;
         if (n_joints_ == 0)
           use_joint_selection = false;
@@ -339,10 +339,8 @@ namespace valkyrie_translator
       lcm_->publish("EST_ROBOT_STATE", &lcm_state_msg);
 
       // push out the measurements for all imus we see advertised
-      int i;
       for (auto iter = imuSensorHandles.begin(); iter != imuSensorHandles.end(); iter ++){
         bot_core::ins_t lcm_imu_msg;
-        //lcm_imu_msg.utime = utime;
         std::ostringstream imuchannel;
         imuchannel << "VAL_IMU_" << iter->first;
         lcm_imu_msg.utime = utime;
@@ -376,9 +374,8 @@ namespace valkyrie_translator
       lcm_ft_array_msg.num_sensors = forceTorqueHandles.size();
       lcm_ft_array_msg.names.resize(forceTorqueHandles.size());
       lcm_ft_array_msg.sensors.resize(forceTorqueHandles.size());
-      i = 0;
+      int i = 0;
       for (auto iter = forceTorqueHandles.begin(); iter != forceTorqueHandles.end(); iter ++){
-
         lcm_ft_array_msg.sensors[i].utime = utime;
         lcm_ft_array_msg.sensors[i].force[0] = iter->second.getForce()[0];
         lcm_ft_array_msg.sensors[i].force[1] = iter->second.getForce()[1];

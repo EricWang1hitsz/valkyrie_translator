@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   std_msgs
   pluginlib
+  roslint
 )
 
 catkin_package(
@@ -56,3 +57,5 @@ install(DIRECTORY config/
 install(FILES LCM2ROSControl.xml
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
+
+roslint_cpp()

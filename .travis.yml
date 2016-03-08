@@ -10,11 +10,6 @@ env:
   - CATKIN_WS=~/catkin_ws
   - CATKIN_WS_SRC=${CATKIN_WS}/src
   - CI_ROS_DISTRO="indigo"
-before_install:
-- git clone https://github.com/openhumanoids/valkyrie-lcm-distro.git
-- cd valkyrie-lcm-distro
-- make
-- export VALKYRIE_LCM_DISTRO_PATH=`pwd`
 install:
 - sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu trusty main" > /etc/apt/sources.list.d/ros-latest.list'
 - wget http://packages.ros.org/ros.key -O - | sudo apt-key add -
@@ -23,6 +18,10 @@ install:
 - sudo rosdep init
 - rosdep update
 - rosdep install --from-paths ./ -i -y --rosdistro $CI_ROS_DISTRO
+- git clone https://github.com/openhumanoids/valkyrie-lcm-distro.git
+- cd valkyrie-lcm-distro
+- make
+- export VALKYRIE_LCM_DISTRO_PATH=`pwd`
 script:
 - source /opt/ros/$CI_ROS_DISTRO/setup.bash
 - source $VALKYRIE_LCM_DISTRO_PATH/setup_path.sh

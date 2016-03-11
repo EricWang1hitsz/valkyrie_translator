@@ -20,7 +20,8 @@ install:
 - rosdep install --from-paths ./ -i -y --rosdistro $CI_ROS_DISTRO
 - git clone https://github.com/openhumanoids/valkyrie-lcm-distro.git
 - cd valkyrie-lcm-distro
-- make -DUSE_BOT_VIS=OFF
+- mkdir build && cd build && cmake .. -DUSE_BOT_VIS=OFF
+- make
 - export VALKYRIE_LCM_DISTRO_PATH=`pwd`
 script:
 - source /opt/ros/$CI_ROS_DISTRO/setup.bash

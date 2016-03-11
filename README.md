@@ -1,4 +1,4 @@
-# valkyrie_translator
+# valkyrie_translator [![Build Status](https://travis-ci.org/openhumanoids/valkyrie_translator.svg?branch=master)](https://travis-ci.org/openhumanoids/valkyrie_translator)
 ROS Control module accpeting torque commands via LCM and sending sensor measurements via LCM.
 
 ## Code Style

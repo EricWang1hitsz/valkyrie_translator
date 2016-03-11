@@ -216,7 +216,7 @@ namespace valkyrie_translator
 
       // VAL_COMMAND_FEEDBACK_TORQUE
       // TODO: add the position elements here, even though they aren't torques
-      drc::joint_angles_t lcm_torque_msg;
+      bot_core::joint_angles_t lcm_torque_msg;
       lcm_torque_msg.robot_name = "val!";
       lcm_torque_msg.utime = utime;
       lcm_torque_msg.num_joints = effortJointHandles.size();

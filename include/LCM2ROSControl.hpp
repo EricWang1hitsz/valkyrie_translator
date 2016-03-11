@@ -15,8 +15,8 @@
 #include "lcmtypes/bot_core/six_axis_force_torque_t.hpp"
 #include "lcmtypes/bot_core/robot_state_t.hpp"
 #include "lcmtypes/bot_core/ins_t.hpp"
+#include "lcmtypes/bot_core/joint_angles_t.hpp"
 
-#include "lcmtypes/drc/joint_angles_t.hpp"
 #include "lcmtypes/drc/atlas_command_t.hpp"
 
 namespace valkyrie_translator

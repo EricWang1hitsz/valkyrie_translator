@@ -3,8 +3,6 @@ dist: trusty
 cache:
 - apt
 language: generic
-compiler:
-- gcc
 env:
   global:
   - CATKIN_WS=~/catkin_ws
@@ -14,13 +12,12 @@ install:
 - sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu trusty main" > /etc/apt/sources.list.d/ros-latest.list'
 - wget http://packages.ros.org/ros.key -O - | sudo apt-key add -
 - sudo apt-get update -qq
-- sudo apt-get install -qq -y python-rosdep python-catkin-tools
+- sudo apt-get install -qq -y python-rosdep python-catkin-tools freeglut3-dev libgtk2.0-dev
 - sudo rosdep init
 - rosdep update
 - rosdep install --from-paths ./ -i -y --rosdistro $CI_ROS_DISTRO
 - git clone https://github.com/openhumanoids/valkyrie-lcm-distro.git
 - cd valkyrie-lcm-distro
-- mkdir build && cd build && cmake .. -DUSE_BOT_VIS=OFF
 - make
 - export VALKYRIE_LCM_DISTRO_PATH=`pwd`
 script:

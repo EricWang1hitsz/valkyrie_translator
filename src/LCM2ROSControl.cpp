@@ -404,7 +404,7 @@ namespace valkyrie_translator
    LCM2ROSControl_LCMHandler::~LCM2ROSControl_LCMHandler() {}
 
    void LCM2ROSControl_LCMHandler::jointCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
-                               const drc::atlas_command_t* msg) {
+                               const bot_core::atlas_command_t* msg) {
       // TODO: zero non-mentioned joints for safety?
 
       for (unsigned int i = 0; i < msg->num_joints; ++i) {

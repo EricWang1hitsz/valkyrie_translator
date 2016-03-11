@@ -18,6 +18,9 @@
 #include "lcmtypes/bot_core/joint_angles_t.hpp"
 #include "lcmtypes/bot_core/atlas_command_t.hpp"
 
+#include <set>
+#include <string>
+#include <vector>
 
 namespace valkyrie_translator
 {

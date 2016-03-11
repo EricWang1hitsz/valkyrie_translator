@@ -17,6 +17,13 @@ wolfgang.merkt@ed.ac.uk, 201603**
 
 #include <LCM2ROSControl.hpp>
 
+inline double clamp(double x, double lower, double upper) {
+  return x < lower ? lower : (x > upper ? upper : x);
+}
+inline double toRad(double deg) {
+  return (deg * M_PI / 180);
+}
+
 namespace valkyrie_translator
 {
    LCM2ROSControl::LCM2ROSControl()
@@ -307,14 +314,15 @@ namespace valkyrie_translator
           joint_command& command = latest_commands[iter->first];
           double position_to_go = command.position;
 
-          // TODO: check that desired q is within limits
-          if (fabs(position_to_go) < M_PI) { // TODO: check joint limit!
-            iter->second.setCommand(position_to_go);
-          } else{
-            ROS_INFO("Dangerous latest_commands[%s]: %f\n", iter->first.c_str(), position_to_go);
-            // iter->second.setCommand(0.0); // Don't do anything!
-          }
-          // TODO: we can't directly iterate like this, better match differently!!
+          // TODO: make more generic, read joint limits from config
+          if (iter->first == "lowerNeckPitch")
+            iter->second.setCommand(toRad(clamp(position_to_go, 0, 45)));
+          else if (iter->first == "neckYaw")
+            iter->second.setCommand(toRad(clamp(position_to_go, -15, 15)));
+          else if (iter->first == "upperNeckPitch")
+            iter->second.setCommand(toRad(clamp(position_to_go, -50, 0)));
+          else
+            ROS_WARN_STREAM(iter->first << ": not supported yet (desired position was " << position_to_go << ")" << std::endl);
 
           lcm_pose_msg.joint_name[positionJointIndex] = iter->first;
           lcm_pose_msg.joint_position[positionJointIndex] = q;

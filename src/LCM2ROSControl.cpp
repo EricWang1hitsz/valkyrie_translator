@@ -216,7 +216,7 @@ namespace valkyrie_translator
 
       // VAL_COMMAND_FEEDBACK_TORQUE
       // TODO: add the position elements here, even though they aren't torques
-      drc::joint_angles_t lcm_torque_msg;
+      bot_core::joint_angles_t lcm_torque_msg;
       lcm_torque_msg.robot_name = "val!";
       lcm_torque_msg.utime = utime;
       lcm_torque_msg.num_joints = effortJointHandles.size();
@@ -404,7 +404,7 @@ namespace valkyrie_translator
    LCM2ROSControl_LCMHandler::~LCM2ROSControl_LCMHandler() {}
 
    void LCM2ROSControl_LCMHandler::jointCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
-                               const drc::atlas_command_t* msg) {
+                               const bot_core::atlas_command_t* msg) {
       // TODO: zero non-mentioned joints for safety?
 
       for (unsigned int i = 0; i < msg->num_joints; ++i) {

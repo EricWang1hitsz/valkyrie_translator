@@ -15,9 +15,12 @@
 #include "lcmtypes/bot_core/six_axis_force_torque_t.hpp"
 #include "lcmtypes/bot_core/robot_state_t.hpp"
 #include "lcmtypes/bot_core/ins_t.hpp"
+#include "lcmtypes/bot_core/joint_angles_t.hpp"
+#include "lcmtypes/bot_core/atlas_command_t.hpp"
 
-#include "lcmtypes/drc/joint_angles_t.hpp"
-#include "lcmtypes/drc/atlas_command_t.hpp"
+#include <set>
+#include <string>
+#include <vector>
 
 namespace valkyrie_translator
 {
@@ -47,7 +50,7 @@ namespace valkyrie_translator
         LCM2ROSControl_LCMHandler(LCM2ROSControl& parent);
         virtual ~LCM2ROSControl_LCMHandler();
         void jointCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
-                               const drc::atlas_command_t* msg);
+                               const bot_core::atlas_command_t* msg);
         void update();
    private:
         LCM2ROSControl& parent_;

@@ -39,6 +39,15 @@
 #include <vector>
 #include <map>
 
+inline double clamp(double x, double lower, double upper) {
+    return x < lower ? lower : (x > upper ? upper : x);
+}
+
+inline double toRad(double deg) {
+    return (deg * M_PI / 180);
+}
+
+
 namespace valkyrie_translator {
     class JointPositionGoalController;
 
@@ -238,6 +247,7 @@ namespace valkyrie_translator {
             // TODO: get clamping back in!
 
             // TODO: check that desired q is within limits
+            // cf. https://github.com/openhumanoids/valkyrie_translator/pull/5/files
             if (fabs(position_to_go) < M_PI) {
                 iter->second.setCommand(position_to_go);
             } else {

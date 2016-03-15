@@ -19,7 +19,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES beginner_tutorials
-  CATKIN_DEPENDS roscpp std_msgs ros_control controller_interface
+  CATKIN_DEPENDS roscpp std_msgs hardware_interface controller_interface joint_limits_interface
   DEPENDS system_lib pluginlib
 )
 

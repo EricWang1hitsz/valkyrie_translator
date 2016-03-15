@@ -1,6 +1,7 @@
-LCM2ROSControl:
-    type: valkyrie_translator/LCM2ROSControl
+JointPositionGoalController:
+    type: valkyrie_translator/JointPositionGoalController
     joints:
       - upperNeckPitch
       - lowerNeckPitch
       - neckYaw
+    joint_velocity_limit: 15 # deg/s, should be changed into e.g. bot-param-server

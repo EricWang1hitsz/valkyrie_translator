@@ -70,7 +70,7 @@ namespace valkyrie_translator {
     };
 
     class JointPositionGoalController
-            : public controller_interface::Controller<hardware_interface::EffortJointInterface> {
+            : public controller_interface::Controller<hardware_interface::PositionJointInterface> {
     public:
         JointPositionGoalController();
 

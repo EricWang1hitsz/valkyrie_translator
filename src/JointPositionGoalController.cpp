@@ -97,6 +97,9 @@ namespace valkyrie_translator {
 
         std::map<std::string, hardware_interface::JointHandle> positionJointHandles;
 
+        std::map<std::string, double> lower_joint_limit;
+        std::map<std::string, double> upper_joint_limit;
+
         ros::Time last_update;
     };
 

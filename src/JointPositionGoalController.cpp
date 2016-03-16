@@ -251,22 +251,24 @@ namespace valkyrie_translator {
         for (auto iter = positionJointHandles.begin(); iter != positionJointHandles.end(); iter++) {
             std::string joint_name = iter->first;
             double q = iter->second.getPosition();
-            double qd = iter->second.getVelocity();
+            double qd = iter->second.getVelocity();  // TODO: check current velocity
 
-            double &command = latest_commands[iter->first];
-            double position_to_go = command;
+            double &q_des = latest_commands[iter->first];
 
-            // TODO: get clamping back in!
+            double vector_to_go = q_des - q;
+            // Clamp the overall vector to go with the maximum joint velocity in radian per cycle, i.e. use maximum joint velocity where appropriate
+//            double new_position_to_be_commanded =
+//                    q + clamp(vector_to_go, -max_joint_velocity_rad_per_cycle, max_joint_velocity_rad_per_cycle); // TODO BUG
 
-            // TODO: check that desired q is within limits
-            // cf. https://github.com/openhumanoids/valkyrie_translator/pull/5/files
-            if (fabs(position_to_go) < M_PI) {
-                iter->second.setCommand(position_to_go);
-            } else {
-                ROS_INFO("Dangerous latest_commands[%s]: %f\n", iter->first.c_str(), position_to_go);
-                // iter->second.setCommand(0.0); // Don't do anything!
-            }
-            // TODO: we can't directly iterate like this, better match differently!!
+            double new_position_to_be_commanded = q + vector_to_go; // TODO: unsafe, but debug
+
+            // Check that new position is within joint position limits, enforce by clamping
+            auto limits = joint_limits[joint_name];
+            double safe_new_position_to_be_commanded = clamp(new_position_to_be_commanded, limits.min_position,
+                                                             limits.max_position);
+
+            // Write command to joint
+            iter->second.setCommand(safe_new_position_to_be_commanded);
 
             lcm_pose_msg.joint_name[positionJointIndex] = joint_name;
             lcm_pose_msg.joint_position[positionJointIndex] = q;
@@ -278,7 +280,7 @@ namespace valkyrie_translator {
 
             // republish to guarantee sync
             lcm_commanded_msg.joint_name[positionJointIndex] = joint_name;
-            lcm_commanded_msg.joint_position[positionJointIndex] = command;
+            lcm_commanded_msg.joint_position[positionJointIndex] = safe_new_position_to_be_commanded;
 
             positionJointIndex++;
         }

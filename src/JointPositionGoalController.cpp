@@ -202,16 +202,6 @@ namespace valkyrie_translator {
         lcm_commanded_msg.joint_velocity.assign(number_of_joint_interfaces, 0.);
         lcm_commanded_msg.joint_effort.assign(number_of_joint_interfaces, 0.);
 
-        // TODO: remove
-//        // VAL_COMMAND_FEEDBACK_TORQUE
-//        // TODO: add the position elements here, even though they aren't torques
-//        bot_core::joint_angles_t lcm_torque_msg;
-//        lcm_torque_msg.robot_name = "val!";
-//        lcm_torque_msg.utime = utime;
-//        lcm_torque_msg.num_joints = effortJointHandles.size();
-//        lcm_torque_msg.joint_name.assign(effortJointHandles.size(), "");
-//        lcm_torque_msg.joint_position.assign(effortJointHandles.size(), 0.);
-
         // EST_ROBOT_STATE
         // need to decide what message we're really using for state. for now,
         // assembling this to make director happy
@@ -295,8 +285,6 @@ namespace valkyrie_translator {
     void JointPositionGoalController_LCMHandler::jointPositionGoalHandler(const lcm::ReceiveBuffer *rbuf,
                                                                           const std::string &channel,
                                                                           const bot_core::robot_state_t *msg) {
-        // TODO: this handler cant log a thing, meah
-        ROS_INFO_STREAM("Received new joint position goal");
         for (unsigned int i = 0; i < msg->num_joints; ++i) {
             auto search = parent_.latest_commands.find(msg->joint_name[i]);
             if (search != parent_.latest_commands.end()) {
@@ -312,5 +300,4 @@ namespace valkyrie_translator {
     }
 }  // namespace valkyrie_translator
 
-PLUGINLIB_EXPORT_CLASS(valkyrie_translator::JointPositionGoalController, controller_interface::ControllerBase
-)
+PLUGINLIB_EXPORT_CLASS(valkyrie_translator::JointPositionGoalController, controller_interface::ControllerBase)

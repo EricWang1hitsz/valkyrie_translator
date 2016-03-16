@@ -249,6 +249,7 @@ namespace valkyrie_translator {
         // Iterate over all position-controlled joints
         size_t positionJointIndex = 0;
         for (auto iter = positionJointHandles.begin(); iter != positionJointHandles.end(); iter++) {
+            std::string joint_name = iter->first;
             double q = iter->second.getPosition();
             double qd = iter->second.getVelocity();
 
@@ -267,16 +268,16 @@ namespace valkyrie_translator {
             }
             // TODO: we can't directly iterate like this, better match differently!!
 
-            lcm_pose_msg.joint_name[positionJointIndex] = iter->first;
+            lcm_pose_msg.joint_name[positionJointIndex] = joint_name;
             lcm_pose_msg.joint_position[positionJointIndex] = q;
             lcm_pose_msg.joint_velocity[positionJointIndex] = qd;
 
-            lcm_state_msg.joint_name[positionJointIndex] = iter->first;
+            lcm_state_msg.joint_name[positionJointIndex] = joint_name;
             lcm_state_msg.joint_position[positionJointIndex] = q;
             lcm_state_msg.joint_velocity[positionJointIndex] = qd;
 
             // republish to guarantee sync
-            lcm_commanded_msg.joint_name[positionJointIndex] = iter->first;
+            lcm_commanded_msg.joint_name[positionJointIndex] = joint_name;
             lcm_commanded_msg.joint_position[positionJointIndex] = command;
 
             positionJointIndex++;

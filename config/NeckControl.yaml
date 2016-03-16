@@ -4,4 +4,17 @@ JointPositionGoalController:
       - upperNeckPitch
       - lowerNeckPitch
       - neckYaw
-    joint_velocity_limit: 15 # deg/s, should be changed into e.g. bot-param-server
+    joint_velocity_limit: 15 # deg/s
+    joint_limits:
+      upperNeckPitch:
+        has_position_limits: true
+        min_position: -0.873 # -50deg
+        max_position: 0.0 # 0deg
+      neckYaw:
+        has_position_limits: true
+        min_position: -0.262 # -15deg
+        max_position: 0.262 # 15deg
+      lowerNeckPitch:
+        has_position_limits: true
+        min_position: 0.0 # 0deg
+        max_position: 0.785 # 45deg

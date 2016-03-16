@@ -12,6 +12,12 @@
  * wolfgang.merkt@ed.ac.uk, 201603**
  */
 
+#include <map>
+#include <string>
+#include <algorithm>
+#include <vector>
+#include <set>
+
 #include <hardware_interface/joint_command_interface.h>
 #include <controller_interface/controller.h>
 #include <pluginlib/class_list_macros.h>
@@ -127,7 +133,7 @@ namespace valkyrie_translator {
         ROS_INFO_STREAM("Maximum joint velocity: " << max_joint_velocity_ << "deg/s");
 
         // Retrieve joint limits from parameter server
-        for (auto const &joint_name: joint_names_) {
+        for (auto const &joint_name : joint_names_) {
             joint_limits_interface::JointLimits limits;
             if (!getJointLimits(joint_name, controller_nh, limits))
                 ROS_ERROR_STREAM("Cannot read joint limits for joint " << joint_name << " from param server");
@@ -261,16 +267,16 @@ namespace valkyrie_translator {
             iter->second.setCommand(q_command_with_position_limits_enforced);
 
             lcm_pose_msg.joint_name[positionJointIndex] = joint_name;
-            lcm_pose_msg.joint_position[positionJointIndex] = (float) q;
-            lcm_pose_msg.joint_velocity[positionJointIndex] = (float) qd;
+            lcm_pose_msg.joint_position[positionJointIndex] = static_cast<float>(q);
+            lcm_pose_msg.joint_velocity[positionJointIndex] = static_cast<float>(qd);
 
             lcm_state_msg.joint_name[positionJointIndex] = joint_name;
-            lcm_state_msg.joint_position[positionJointIndex] = (float) q;
-            lcm_state_msg.joint_velocity[positionJointIndex] = (float) qd;
+            lcm_state_msg.joint_position[positionJointIndex] = static_cast<float>(q);
+            lcm_state_msg.joint_velocity[positionJointIndex] = static_cast<float>(qd);
 
             // republish to guarantee sync
             lcm_commanded_msg.joint_name[positionJointIndex] = joint_name;
-            lcm_commanded_msg.joint_position[positionJointIndex] = (float) q_command_with_position_limits_enforced;
+            lcm_commanded_msg.joint_position[positionJointIndex] = static_cast<float>(q_command_with_position_limits_enforced);
 
             positionJointIndex++;
         }

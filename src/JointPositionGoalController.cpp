@@ -13,17 +13,11 @@
  */
 
 #include <hardware_interface/joint_command_interface.h>
-// #include <hardware_interface/joint_state_interface.h>
 #include <controller_interface/controller.h>
 #include <pluginlib/class_list_macros.h>
-// #include <ros/node_handle.h>
 
-// load and use joint limits, work in progress
-// wip: override joint and torque limits with more conservative values in param file
-// theoretically NASA should already enforce these, cf. https://github.com/ros-controls/ros_control/wiki/joint_limits_interface
-// #include <joint_limits_interface/joint_limits.h>
-// #include <joint_limits_interface/joint_limits_urdf.h>
-// #include <joint_limits_interface/joint_limits_rosparam.h>
+#include <joint_limits_interface/joint_limits.h>
+#include <joint_limits_interface/joint_limits_rosparam.h>
 
 #include <lcm/lcm-cpp.hpp>
 #include "lcmtypes/bot_core/joint_state_t.hpp"
@@ -97,8 +91,10 @@ namespace valkyrie_translator {
 
         std::map<std::string, hardware_interface::JointHandle> positionJointHandles;
 
-        std::map<std::string, double> lower_joint_limit;
-        std::map<std::string, double> upper_joint_limit;
+        std::map<std::string, joint_limits_interface::JointLimits> joint_limits;
+        double max_joint_velocity;
+        double max_joint_velocity_rad_per_cycle;
+        double control_frequency = 500;  // Hz
 
         ros::Time last_update;
     };
@@ -135,6 +131,28 @@ namespace valkyrie_translator {
         bool use_joint_selection = true;
         if (n_joints_ == 0)
             use_joint_selection = false;
+
+        // Retrieve maximum joint velocities in degrees per second and convert to radians per tick
+        if (!controller_nh.getParam("joint_velocity_limit", max_joint_velocity)) {
+            ROS_WARN("Cannot retrieve desired maximum joint velocity from param server, defaulting to 10deg/s");
+            max_joint_velocity = 10;  // Default to 10deg/s if not set
+        }
+        max_joint_velocity_rad_per_cycle = toRad(max_joint_velocity) / control_frequency;
+        ROS_INFO_STREAM(
+                "Maximum joint velocity: " << max_joint_velocity << "deg/s, " << max_joint_velocity_rad_per_cycle <<
+                "rad/cycle");
+
+        // Retrieve joint limits from parameter server
+        for (auto const &joint_name: joint_names_) {
+            joint_limits_interface::JointLimits limits;
+            if (!getJointLimits(joint_name, controller_nh, limits))
+                ROS_ERROR_STREAM("Cannot read joint limits for joint " << joint_name << " from param server");
+
+            joint_limits.insert(std::make_pair(joint_name, limits));
+            ROS_INFO_STREAM("Joint Position Limits: " << joint_name << " has lower limit " << limits.min_position <<
+                            " and upper limit " <<
+                            limits.max_position);
+        }
 
         // get a pointer to the position interface
         hardware_interface::PositionJointInterface *position_hw = robot_hw->get<hardware_interface::PositionJointInterface>();

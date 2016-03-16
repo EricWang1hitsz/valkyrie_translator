@@ -59,8 +59,8 @@ namespace valkyrie_translator {
 
         virtual ~JointPositionGoalController_LCMHandler();
 
-        void jointCommandHandler(const lcm::ReceiveBuffer *rbuf, const std::string &channel,
-                                 const bot_core::atlas_command_t *msg);
+        void jointPositionGoalHandler(const lcm::ReceiveBuffer *rbuf, const std::string &channel,
+                                      const bot_core::robot_state_t *msg);
 
         void update();
 
@@ -287,24 +287,22 @@ namespace valkyrie_translator {
         if (!lcm_->good()) {
             std::cerr << "ERROR: handler lcm is not good()" << std::endl;
         }
-        lcm_->subscribe("ROBOT_COMMAND", &JointPositionGoalController_LCMHandler::jointCommandHandler, this);
-
-        // TODO: subscribe to JOINT_POSITION_GOAL
+        lcm_->subscribe("JOINT_POSITION_GOAL", &JointPositionGoalController_LCMHandler::jointPositionGoalHandler, this);
     }
 
     JointPositionGoalController_LCMHandler::~JointPositionGoalController_LCMHandler() { }
 
-    // TODO: jointPositionGoalHandler
-    void JointPositionGoalController_LCMHandler::jointCommandHandler(const lcm::ReceiveBuffer *rbuf,
-                                                                     const std::string &channel,
-                                                                     const bot_core::atlas_command_t *msg) {
-        // TODO: zero non-mentioned joints for safety?
-
+    void JointPositionGoalController_LCMHandler::jointPositionGoalHandler(const lcm::ReceiveBuffer *rbuf,
+                                                                          const std::string &channel,
+                                                                          const bot_core::robot_state_t *msg) {
+        // TODO: this handler cant log a thing, meah
+        ROS_INFO_STREAM("Received new joint position goal");
         for (unsigned int i = 0; i < msg->num_joints; ++i) {
-            auto search = parent_.latest_commands.find(msg->joint_names[i]);
+            auto search = parent_.latest_commands.find(msg->joint_name[i]);
             if (search != parent_.latest_commands.end()) {
-                double &command = parent_.latest_commands[msg->joint_names[i]];
-                command = msg->position[i];
+                ROS_INFO_STREAM(msg->joint_name[i] << " got new q_des " << msg->joint_position[i]);
+                double &command = parent_.latest_commands[msg->joint_name[i]];
+                command = msg->joint_position[i];
             }
         }
     }

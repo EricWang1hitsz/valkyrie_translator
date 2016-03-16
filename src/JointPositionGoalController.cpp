@@ -112,7 +112,7 @@ namespace valkyrie_translator {
             return false;
         }
 
-        // setup LCM (todo: move to constructor? how to propagate an error then?)
+        // setup LCM
         lcm_ = boost::shared_ptr<lcm::LCM>(new lcm::LCM);
         if (!lcm_->good()) {
             std::cerr << "ERROR: lcm is not good()" << std::endl;
@@ -244,31 +244,41 @@ namespace valkyrie_translator {
         lcm_state_msg.twist.angular_velocity.y = 0.0;
         lcm_state_msg.twist.angular_velocity.z = 0.0;
 
-
-        // TODO: calculate diff and have max velocity as parameter
         // Iterate over all position-controlled joints
         size_t positionJointIndex = 0;
         for (auto iter = positionJointHandles.begin(); iter != positionJointHandles.end(); iter++) {
             std::string joint_name = iter->first;
             double q = iter->second.getPosition();
-            double qd = iter->second.getVelocity();  // TODO: check current velocity
+            double qd = iter->second.getVelocity();
 
-            double &q_des = latest_commands[iter->first];
+            double &q_position_goal = latest_commands[iter->first];
 
-            double vector_to_go = q_des - q;
-            // Clamp the overall vector to go with the maximum joint velocity in radian per cycle, i.e. use maximum joint velocity where appropriate
-//            double new_position_to_be_commanded =
-//                    q + clamp(vector_to_go, -max_joint_velocity_rad_per_cycle, max_joint_velocity_rad_per_cycle); // TODO BUG
+            double q_difference_between_desired_and_current = q_position_goal - q;
+            double q_desired = q + max_joint_velocity_rad_per_cycle *
+                                   q_difference_between_desired_and_current; // TODO: unsafe, but debug
 
-            double new_position_to_be_commanded = q + vector_to_go; // TODO: unsafe, but debug
 
             // Check that new position is within joint position limits, enforce by clamping
-            auto limits = joint_limits[joint_name];
-            double safe_new_position_to_be_commanded = clamp(new_position_to_be_commanded, limits.min_position,
-                                                             limits.max_position);
+            joint_limits_interface::JointLimits &limits = joint_limits[joint_name];
+            double q_desired_with_position_limits_enforced = clamp(q_desired, limits.min_position,
+                                                                   limits.max_position);
+
+            // Enforce that the maximum change between the current measured and the desired is less than the
+            // step change allowed by the max_joint_velocity (i.e. avoid jerks)
+
+
+            std::cout << joint_name << std::endl;
+            std::cout << "q: " << q << std::endl;
+            std::cout << "q_position_goal: " << q_position_goal << std::endl;
+            std::cout << "q_difference_between_desired_and_current: " << q_difference_between_desired_and_current <<
+            std::endl;
+            std::cout << "q_desired: " << q_desired << std::endl;
+            std::cout << "q_desired_with_position_limits_enforced: " << q_desired_with_position_limits_enforced <<
+            std::endl;
+            std::cout << std::endl;
 
             // Write command to joint
-            iter->second.setCommand(safe_new_position_to_be_commanded);
+            iter->second.setCommand(q_desired_with_position_limits_enforced);
 
             lcm_pose_msg.joint_name[positionJointIndex] = joint_name;
             lcm_pose_msg.joint_position[positionJointIndex] = q;
@@ -280,7 +290,7 @@ namespace valkyrie_translator {
 
             // republish to guarantee sync
             lcm_commanded_msg.joint_name[positionJointIndex] = joint_name;
-            lcm_commanded_msg.joint_position[positionJointIndex] = safe_new_position_to_be_commanded;
+            lcm_commanded_msg.joint_position[positionJointIndex] = q_desired_with_position_limits_enforced;
 
             positionJointIndex++;
         }

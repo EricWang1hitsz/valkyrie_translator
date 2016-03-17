@@ -15,7 +15,7 @@ wolfgang.merkt@ed.ac.uk, 201603**
 
  **/
 
-#include <LCM2ROSControl.hpp>
+#include "LCM2ROSControl.hpp"
 
 namespace valkyrie_translator
 {

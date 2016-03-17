@@ -17,7 +17,6 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 catkin_package(
-#  INCLUDE_DIRS include
   LIBRARIES LCM2ROSControl JointPositionGoalController
   CATKIN_DEPENDS roscpp std_msgs hardware_interface controller_interface joint_limits_interface
   DEPENDS system_lib pluginlib
@@ -28,7 +27,7 @@ catkin_package(
 ###########
 
 include_directories(
-  ${catkin_INCLUDE_DIRS} include
+  ${catkin_INCLUDE_DIRS}
 )
 
 ######################################################

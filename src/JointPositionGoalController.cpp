@@ -30,7 +30,7 @@
 #include "lcmtypes/bot_core/robot_state_t.hpp"
 
 inline double clamp(double x, double lower, double upper) {
-    return x < lower ? lower : (x > upper ? upper : x);  // TODO: move to std::min std::max
+    return std::max(lower, std::min(upper, x));
 }
 
 namespace valkyrie_translator {

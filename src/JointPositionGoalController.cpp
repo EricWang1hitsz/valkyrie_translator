@@ -173,6 +173,7 @@ namespace valkyrie_translator {
             positionJointHandles_[positionNames[i]] = position_hw->getHandle(positionNames[i]);
             latest_commands_[positionNames[i]] = 0.0;
         }
+        q_move_time_ = 0;
 
         auto position_hw_claims = position_hw->getClaims();
         claimed_resources.insert(position_hw_claims.begin(), position_hw_claims.end());
@@ -195,7 +196,6 @@ namespace valkyrie_translator {
         lcm_->handleTimeout(0);
 
         double dt = (time - last_update_).toSec();
-        last_update_ = time;
         int64_t utime = (int64_t) (time.toSec() * 1000000.);
 
         size_t number_of_joint_interfaces = positionJointHandles_.size();
@@ -316,6 +316,7 @@ namespace valkyrie_translator {
                                                                           const bot_core::robot_state_t *msg) {
         // Reset q_move_time_
         parent_.q_move_time_ = 0;
+        parent_.last_update_ = ros::Time::now();
 
         // Iterate over all received joints
         for (unsigned int i = 0; i < msg->num_joints; ++i) {

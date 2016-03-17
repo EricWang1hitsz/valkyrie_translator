@@ -194,7 +194,7 @@ namespace valkyrie_translator {
         lcm_->handleTimeout(0);
 
         double dt = (time - last_update_).toSec();
-        int64_t utime = (int64_t) (time.toSec() * 1000000.);
+        int64_t utime = (int64_t) (time.toSec() * 1e6);
 
         size_t number_of_joint_interfaces = positionJointHandles_.size();
 

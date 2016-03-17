@@ -73,18 +73,28 @@ namespace valkyrie_translator {
                          std::set<std::string> &claimed_resources) override;
 
     private:
+        void publishEstimatedRobotStateToLCM(int64_t utime);
+
+        void publishCoreRobotStateToLCM(int64_t utime);
+
+        void publishCommandFeedbackToLCM(int64_t utime);
+
         boost::shared_ptr<lcm::LCM> lcm_;
         std::shared_ptr<JointPositionGoalController_LCMHandler> handler_;
 
+        std::vector<std::string> joint_names_;
         std::map<std::string, hardware_interface::JointHandle> positionJointHandles_;
+        size_t number_of_joint_interfaces_;
 
         // Limits: joint position and velocity limits
         std::map<std::string, joint_limits_interface::JointLimits> joint_limits_;
         double max_joint_velocity_;
 
         std::map<std::string, double> q_measured_;
+        std::map<std::string, double> qd_measured_;
         std::map<std::string, double> q_delta_;
         std::map<std::string, double> q_start_;
+        std::map<std::string, double> q_last_commanded_;
 
         double q_move_time_;
         std::map<std::string, double> latest_commands_;
@@ -124,7 +134,6 @@ namespace valkyrie_translator {
 
         // Check which joints we have been assigned to
         // If we have joints assigned to just us, claim those, otherwise claim all
-        std::vector<std::string> joint_names_;
         if (!controller_nh.getParam("joints", joint_names_))
             ROS_INFO_STREAM("Could not get assigned list of joints, will resume to claim all");
 
@@ -171,6 +180,7 @@ namespace valkyrie_translator {
             positionJointHandles_[positionNames[i]] = position_hw->getHandle(positionNames[i]);
             latest_commands_[positionNames[i]] = 0.0;
         }
+        number_of_joint_interfaces_ = positionJointHandles_.size();
         q_move_time_ = 0;
 
         auto position_hw_claims = position_hw->getClaims();
@@ -196,38 +206,62 @@ namespace valkyrie_translator {
         double dt = (time - last_update_).toSec();
         int64_t utime = (int64_t) (time.toSec() * 1e6);
 
-        size_t number_of_joint_interfaces = positionJointHandles_.size();
+        // Iterate over all position-controlled joints
+        for (auto iter = positionJointHandles_.begin(); iter != positionJointHandles_.end(); iter++) {
+            std::string joint_name = iter->first;
+            double &q = q_measured_[joint_name];
+            q = iter->second.getPosition();
+            double &qd = qd_measured_[joint_name];
+            qd = iter->second.getVelocity();
 
-        // VAL_CORE_ROBOT_STATE
-        // push out the joint states for all joints we see advertised
-        // and also the commanded torques, for reference
-        bot_core::joint_state_t lcm_pose_msg;
-        lcm_pose_msg.utime = utime;
-        lcm_pose_msg.num_joints = (int16_t) number_of_joint_interfaces;
-        lcm_pose_msg.joint_name.assign(number_of_joint_interfaces, "");
-        lcm_pose_msg.joint_position.assign(number_of_joint_interfaces, (const float &) 0.);
-        lcm_pose_msg.joint_velocity.assign(number_of_joint_interfaces, (const float &) 0.);
-        lcm_pose_msg.joint_effort.assign(number_of_joint_interfaces, (const float &) 0.);
+            double &q_desired = latest_commands_[iter->first];
+            double &q_delta = q_delta_[joint_name];
+            double &q_start = q_start_[joint_name];
 
-        // VAL_COMMAND_FEEDBACK
-        bot_core::joint_state_t lcm_commanded_msg;
-        lcm_commanded_msg.utime = utime;
-        lcm_commanded_msg.num_joints = (int16_t) number_of_joint_interfaces;
-        lcm_commanded_msg.joint_name.assign(number_of_joint_interfaces, "");
-        lcm_commanded_msg.joint_position.assign(number_of_joint_interfaces, (const float &) 0.);
-        lcm_commanded_msg.joint_velocity.assign(number_of_joint_interfaces, (const float &) 0.);
-        lcm_commanded_msg.joint_effort.assign(number_of_joint_interfaces, (const float &) 0.);
+            double eta = std::max(0.0, std::min(1.0, dt / q_move_time_));
+            double q_command = eta * q_desired + (1 - eta) * q_start;
 
+            // Check that new position is within joint position limits, enforce by clamping
+            joint_limits_interface::JointLimits &limits = joint_limits_[joint_name];
+            double q_command_with_position_limits_enforced = clamp(q_command, limits.min_position,
+                                                                   limits.max_position);
+
+            double &q_last_commanded = q_last_commanded_[joint_name];
+            q_last_commanded = q_command_with_position_limits_enforced;
+
+//            std::cout << joint_name << std::endl;
+//            std::cout << "q: " << q << std::endl;
+//            std::cout << "q_desired: " << q_desired << std::endl;
+//            std::cout << "q_start: " << q_start << std::endl;
+//            std::cout << "q_command: " << q_command << std::endl;
+//            std::cout << "q_command_with_position_limits_enforced: " << q_command_with_position_limits_enforced <<
+//            std::endl;
+//            std::cout << std::endl;
+
+            // Write command to joint
+            iter->second.setCommand(q_command_with_position_limits_enforced);
+        }
+
+        publishCoreRobotStateToLCM(utime);
+        publishCommandFeedbackToLCM(utime);
+
+        if (publish_est_robot_state_)
+            publishEstimatedRobotStateToLCM(utime);
+    }
+
+    void JointPositionGoalController::stopping(const ros::Time &time) { }
+
+    void JointPositionGoalController::publishEstimatedRobotStateToLCM(int64_t utime) {
         // EST_ROBOT_STATE
         // need to decide what message we're really using for state. for now,
         // assembling this to make director happy
         bot_core::robot_state_t lcm_state_msg;
         lcm_state_msg.utime = utime;
-        lcm_state_msg.num_joints = (int16_t) number_of_joint_interfaces;
-        lcm_state_msg.joint_name.assign(number_of_joint_interfaces, "");
-        lcm_state_msg.joint_position.assign(number_of_joint_interfaces, (const float &) 0.);
-        lcm_state_msg.joint_velocity.assign(number_of_joint_interfaces, (const float &) 0.);
-        lcm_state_msg.joint_effort.assign(number_of_joint_interfaces, (const float &) 0.);
+        lcm_state_msg.num_joints = (int16_t) number_of_joint_interfaces_;
+        lcm_state_msg.joint_name.assign(number_of_joint_interfaces_, "");
+        lcm_state_msg.joint_position.assign(number_of_joint_interfaces_, (const float &) 0.);
+        lcm_state_msg.joint_velocity.assign(number_of_joint_interfaces_, (const float &) 0.);
+        lcm_state_msg.joint_effort.assign(number_of_joint_interfaces_, (const float &) 0.);
         lcm_state_msg.pose.translation.x = 0.0;
         lcm_state_msg.pose.translation.y = 0.0;
         lcm_state_msg.pose.translation.z = 0.0;
@@ -242,61 +276,59 @@ namespace valkyrie_translator {
         lcm_state_msg.twist.angular_velocity.y = 0.0;
         lcm_state_msg.twist.angular_velocity.z = 0.0;
 
-        // Iterate over all position-controlled joints
-        size_t positionJointIndex = 0;
-        for (auto iter = positionJointHandles_.begin(); iter != positionJointHandles_.end(); iter++) {
-            std::string joint_name = iter->first;
-            double &q = q_measured_[joint_name];
-            q = iter->second.getPosition();
-            double qd = iter->second.getVelocity();
-
-            double &q_desired = latest_commands_[iter->first];
-            double &q_delta = q_delta_[joint_name];
-            double &q_start = q_start_[joint_name];
-
-            double eta = std::max(0.0, std::min(1.0, dt / q_move_time_));
-            double q_command = eta * q_desired + (1 - eta) * q_start;
-
-            // Check that new position is within joint position limits, enforce by clamping
-            joint_limits_interface::JointLimits &limits = joint_limits_[joint_name];
-            double q_command_with_position_limits_enforced = clamp(q_command, limits.min_position,
-                                                                   limits.max_position);
-
-//            std::cout << joint_name << std::endl;
-//            std::cout << "q: " << q << std::endl;
-//            std::cout << "q_desired: " << q_desired << std::endl;
-//            std::cout << "q_start: " << q_start << std::endl;
-//            std::cout << "q_command: " << q_command << std::endl;
-//            std::cout << "q_command_with_position_limits_enforced: " << q_command_with_position_limits_enforced <<
-//            std::endl;
-//            std::cout << std::endl;
-
-            // Write command to joint
-            iter->second.setCommand(q_command_with_position_limits_enforced);
-
-            lcm_pose_msg.joint_name[positionJointIndex] = joint_name;
-            lcm_pose_msg.joint_position[positionJointIndex] = static_cast<float>(q);
-            lcm_pose_msg.joint_velocity[positionJointIndex] = static_cast<float>(qd);
-
+        unsigned int positionJointIndex = 0;
+        for (auto const &joint_name : joint_names_) {
             lcm_state_msg.joint_name[positionJointIndex] = joint_name;
-            lcm_state_msg.joint_position[positionJointIndex] = static_cast<float>(q);
-            lcm_state_msg.joint_velocity[positionJointIndex] = static_cast<float>(qd);
+            lcm_state_msg.joint_position[positionJointIndex] = static_cast<float>(q_measured_[joint_name]);
+            lcm_state_msg.joint_velocity[positionJointIndex] = static_cast<float>(qd_measured_[joint_name]);
+            positionJointIndex++;
+        }
 
-            // republish to guarantee sync
-            lcm_commanded_msg.joint_name[positionJointIndex] = joint_name;
-            lcm_commanded_msg.joint_position[positionJointIndex] = static_cast<float>(q_command_with_position_limits_enforced);
+        lcm_->publish("EST_ROBOT_STATE", &lcm_state_msg);
+    }
 
+    void JointPositionGoalController::publishCoreRobotStateToLCM(int64_t utime) {
+        // VAL_CORE_ROBOT_STATE
+        // push out the joint states for all joints we see advertised
+        // and also the commanded torques, for reference
+        bot_core::joint_state_t lcm_pose_msg;
+        lcm_pose_msg.utime = utime;
+        lcm_pose_msg.num_joints = (int16_t) number_of_joint_interfaces_;
+        lcm_pose_msg.joint_name.assign(number_of_joint_interfaces_, "");
+        lcm_pose_msg.joint_position.assign(number_of_joint_interfaces_, (const float &) 0.);
+        lcm_pose_msg.joint_velocity.assign(number_of_joint_interfaces_, (const float &) 0.);
+        lcm_pose_msg.joint_effort.assign(number_of_joint_interfaces_, (const float &) 0.);
+
+        unsigned int positionJointIndex = 0;
+        for (auto const &joint_name : joint_names_) {
+            lcm_pose_msg.joint_name[positionJointIndex] = joint_name;
+            lcm_pose_msg.joint_position[positionJointIndex] = static_cast<float>(q_measured_[joint_name]);
+            lcm_pose_msg.joint_velocity[positionJointIndex] = static_cast<float>(qd_measured_[joint_name]);
             positionJointIndex++;
         }
 
         lcm_->publish("VAL_CORE_ROBOT_STATE", &lcm_pose_msg);
-        lcm_->publish("VAL_COMMAND_FEEDBACK", &lcm_commanded_msg);
-
-        if (publish_est_robot_state_)
-            lcm_->publish("EST_ROBOT_STATE", &lcm_state_msg);
     }
 
-    void JointPositionGoalController::stopping(const ros::Time &time) { }
+    void JointPositionGoalController::publishCommandFeedbackToLCM(int64_t utime) {
+        // VAL_COMMAND_FEEDBACK, republishes actual commanded position to guarantee sync
+        bot_core::joint_state_t lcm_commanded_msg;
+        lcm_commanded_msg.utime = utime;
+        lcm_commanded_msg.num_joints = (int16_t) number_of_joint_interfaces_;
+        lcm_commanded_msg.joint_name.assign(number_of_joint_interfaces_, "");
+        lcm_commanded_msg.joint_position.assign(number_of_joint_interfaces_, (const float &) 0.);
+        lcm_commanded_msg.joint_velocity.assign(number_of_joint_interfaces_, (const float &) 0.);
+        lcm_commanded_msg.joint_effort.assign(number_of_joint_interfaces_, (const float &) 0.);
+
+        unsigned int positionJointIndex = 0;
+        for (auto const &joint_name : joint_names_) {
+            lcm_commanded_msg.joint_name[positionJointIndex] = joint_name;
+            lcm_commanded_msg.joint_position[positionJointIndex] = static_cast<float>(q_last_commanded_[joint_name]);
+            positionJointIndex++;
+        }
+
+        lcm_->publish("VAL_COMMAND_FEEDBACK", &lcm_commanded_msg);
+    }
 
     JointPositionGoalController_LCMHandler::JointPositionGoalController_LCMHandler(JointPositionGoalController &parent)
             : parent_(parent) {

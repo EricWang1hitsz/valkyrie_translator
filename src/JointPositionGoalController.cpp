@@ -81,6 +81,7 @@ namespace valkyrie_translator {
         // Limits: joint position and velocity limits
         std::map<std::string, joint_limits_interface::JointLimits> joint_limits_;
         double max_joint_velocity_;
+        double max_joint_velocity_rad_;
 
         std::map<std::string, double> q_measured_;
         std::map<std::string, double> q_delta_;
@@ -138,7 +139,8 @@ namespace valkyrie_translator {
             ROS_WARN("Cannot retrieve desired maximum joint velocity from param server, defaulting to 10deg/s");
             max_joint_velocity_ = 10;  // Default to 10deg/s if not set
         }
-        ROS_INFO_STREAM("Maximum joint velocity: " << max_joint_velocity_ << "deg/s");
+        max_joint_velocity_rad_ = (max_joint_velocity_ * M_PI / 180);
+        ROS_INFO_STREAM("Maximum joint velocity: " << max_joint_velocity_ << "deg/s, " << max_joint_velocity_rad_ << "rad/s");
 
         // Retrieve joint limits from parameter server
         for (auto const &joint_name : joint_names_) {
@@ -331,7 +333,7 @@ namespace valkyrie_translator {
                 q_start = q;
 
                 // Calculate move time for joint, set controller q_move_time_ to largest value
-                double tmp_q_move_time = std::abs(q_delta) / parent_.max_joint_velocity_;
+                double tmp_q_move_time = std::abs(q_delta) / parent_.max_joint_velocity_rad_;
                 if (tmp_q_move_time > parent_.q_move_time_)
                     parent_.q_move_time_ = tmp_q_move_time;
             }

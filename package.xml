@@ -2,7 +2,7 @@
 <package format="2">
   <name>valkyrie_translator</name>
   <version>0.0.1</version>
-  <description>Package providing translators between Drake controller and Valkyrie ROS Control system.</description>
+  <description>Package providing LCM-exposed mid-level controllers between Drake controller and Valkyrie ROS Control system.</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag --> 
   <maintainer email="drc@todo.todo">TODO</maintainer>
@@ -10,8 +10,8 @@
   <!--   BSD, MIT, Boost Software License, GPLv2, GPLv3, LGPLv2.1, LGPLv3 -->
   <license>TODO</license>
 
-  <url type="repository">https://github.com/openhumanoids/main-distro</url>
-  <url type="bugtracker">https://github.com/openhumanoids/main-distro/issues</url>
+  <url type="repository">https://github.com/openhumanoids/valkyrie_translator</url>
+  <url type="bugtracker">https://github.com/openhumanoids/valkyrie_translator/issues</url>
 
   <author email="gizatt@mit.edu">Gregory Izatt</author>
   <author email="wolfgang.merkt@ed.ac.uk">Wolfgang Merkt</author>
@@ -20,12 +20,14 @@
   <build_depend>roslint</build_depend>
   <depend>roscpp</depend>
   <depend>std_msgs</depend>
-  <depend>ros_control</depend>
+  <depend>hardware_interface</depend>
+  <depend>joint_limits_interface</depend>
   <depend>pluginlib</depend>
   <depend>controller_interface</depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
     <controller_interface plugin="${prefix}/LCM2ROSControl.xml"/>
+    <controller_interface plugin="${prefix}/JointPositionGoalController.xml"/>
   </export>
 </package>

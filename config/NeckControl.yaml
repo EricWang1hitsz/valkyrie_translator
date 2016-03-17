@@ -1,6 +1,21 @@
-LCM2ROSControl:
-    type: valkyrie_translator/LCM2ROSControl
+JointPositionGoalController:
+    type: valkyrie_translator/JointPositionGoalController
+    publish_est_robot_state: true
     joints:
       - upperNeckPitch
       - lowerNeckPitch
       - neckYaw
+    joint_velocity_limit: 0.262 # rad/s
+    joint_limits:
+      upperNeckPitch:
+        has_position_limits: true
+        min_position: -0.873 # -50deg
+        max_position: 0.0 # 0deg
+      neckYaw:
+        has_position_limits: true
+        min_position: -0.262 # -15deg
+        max_position: 0.262 # 15deg
+      lowerNeckPitch:
+        has_position_limits: true
+        min_position: 0.0 # 0deg
+        max_position: 0.785 # 45deg

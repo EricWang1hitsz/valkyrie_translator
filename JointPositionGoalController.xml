@@ -1,0 +1,7 @@
+<library path="lib/libJointPositionGoalController">
+    <class name="valkyrie_translator/JointPositionGoalController" type="valkyrie_translator::JointPositionGoalController" base_class_type="controller_interface::ControllerBase">
+        <description>
+            Position Controller receiving Joint Position Goals via LCM
+        </description>
+    </class>
+</library>

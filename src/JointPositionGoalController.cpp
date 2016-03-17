@@ -89,6 +89,8 @@ namespace valkyrie_translator {
         double q_move_time_;
         std::map<std::string, double> latest_commands_;
 
+        bool publish_est_robot_state_;
+
         ros::Time last_update_;
     };
 
@@ -113,6 +115,12 @@ namespace valkyrie_translator {
         }
         handler_ = std::shared_ptr<JointPositionGoalController_LCMHandler>(
                 new JointPositionGoalController_LCMHandler(*this));
+
+        // Determine whether to publish EST_ROBOT_STATE
+        if (!controller_nh.getParam("publish_est_robot_state", publish_est_robot_state_)) {
+            ROS_WARN("Could not read desired setting for publishing EST_ROBOT_STATE, defaulting to false");
+            publish_est_robot_state_ = false;
+        }
 
         // Check which joints we have been assigned to
         // If we have joints assigned to just us, claim those, otherwise claim all
@@ -283,7 +291,9 @@ namespace valkyrie_translator {
 
         lcm_->publish("VAL_CORE_ROBOT_STATE", &lcm_pose_msg);
         lcm_->publish("VAL_COMMAND_FEEDBACK", &lcm_commanded_msg);
-        lcm_->publish("EST_ROBOT_STATE", &lcm_state_msg);
+
+        if (publish_est_robot_state_)
+            lcm_->publish("EST_ROBOT_STATE", &lcm_state_msg);
     }
 
     void JointPositionGoalController::stopping(const ros::Time &time) { }

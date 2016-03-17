@@ -1,5 +1,6 @@
 JointPositionGoalController:
     type: valkyrie_translator/JointPositionGoalController
+    publish_est_robot_state: true
     joints:
       - upperNeckPitch
       - lowerNeckPitch

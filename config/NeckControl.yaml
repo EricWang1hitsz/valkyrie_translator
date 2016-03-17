@@ -5,7 +5,7 @@ JointPositionGoalController:
       - upperNeckPitch
       - lowerNeckPitch
       - neckYaw
-    joint_velocity_limit: 15 # deg/s
+    joint_velocity_limit: 0.262 # rad/s
     joint_limits:
       upperNeckPitch:
         has_position_limits: true

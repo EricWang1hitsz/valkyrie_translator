@@ -2,7 +2,7 @@
 <package format="2">
   <name>valkyrie_translator</name>
   <version>0.0.1</version>
-  <description>Package providing translators between Drake controller and Valkyrie ROS Control system as LCM-exposed controllers.</description>
+  <description>Package providing LCM-exposed mid-level controllers between Drake controller and Valkyrie ROS Control system.</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag --> 
   <maintainer email="drc@todo.todo">TODO</maintainer>
@@ -10,8 +10,8 @@
   <!--   BSD, MIT, Boost Software License, GPLv2, GPLv3, LGPLv2.1, LGPLv3 -->
   <license>TODO</license>
 
-  <url type="repository">https://github.com/openhumanoids/main-distro</url>
-  <url type="bugtracker">https://github.com/openhumanoids/main-distro/issues</url>
+  <url type="repository">https://github.com/openhumanoids/valkyrie_translator</url>
+  <url type="bugtracker">https://github.com/openhumanoids/valkyrie_translator/issues</url>
 
   <author email="gizatt@mit.edu">Gregory Izatt</author>
   <author email="wolfgang.merkt@ed.ac.uk">Wolfgang Merkt</author>

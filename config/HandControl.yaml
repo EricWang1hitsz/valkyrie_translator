@@ -14,7 +14,7 @@ JointPositionGoalController:
         - rightThumbMotorPitch1
         - rightThumbMotorPitch2
         - rightThumbMotorRoll
-    joint_velocity_limit: 0.1 # 0.262 rad/s
+    joint_velocity_limit: 0.262 # rad/s
     joint_limits:
         leftIndexFingerMotorPitch1:
             has_position_limits: true

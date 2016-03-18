@@ -100,6 +100,7 @@ namespace valkyrie_translator {
         std::map<std::string, double> latest_commands_;
 
         bool publish_est_robot_state_;
+        std::string command_channel_;
 
         ros::Time last_update_;
     };
@@ -116,6 +117,13 @@ namespace valkyrie_translator {
             ROS_ERROR("Cannot initialize this controller because it failed to be constructed");
             return false;
         }
+
+        // Retrieve LCM channel name on which to listen to joint position commands on
+        if (!controller_nh.getParam("command_channel", command_channel_)) {
+            ROS_WARN("Cannot retrieve command channel, defaulting to JOINT_POSITION_GOAL");
+            command_channel_ = "JOINT_POSITION_GOAL";
+        }
+        ROS_INFO_STREAM("Listening for commands on LCM channel " << command_channel_);
 
         // setup LCM
         lcm_ = boost::shared_ptr<lcm::LCM>(new lcm::LCM);
@@ -336,7 +344,8 @@ namespace valkyrie_translator {
         if (!lcm_->good()) {
             std::cerr << "ERROR: handler lcm is not good()" << std::endl;
         }
-        lcm_->subscribe("JOINT_POSITION_GOAL", &JointPositionGoalController_LCMHandler::jointPositionGoalHandler, this);
+        lcm_->subscribe(parent_.command_channel_, &JointPositionGoalController_LCMHandler::jointPositionGoalHandler,
+                        this);
     }
 
     JointPositionGoalController_LCMHandler::~JointPositionGoalController_LCMHandler() { }

@@ -2,12 +2,12 @@ JointPositionGoalController:
     type: valkyrie_translator/JointPositionGoalController
     publish_est_robot_state: true
     joints:
-        - leftIndexFingerMotorPitch1
-        - leftMiddleFingerMotorPitch1
-        - leftPinkyMotorPitch1
-        - leftThumbMotorPitch1
-        - leftThumbMotorPitch2
-        - leftThumbMotorRoll
+        # - leftIndexFingerMotorPitch1
+        # - leftMiddleFingerMotorPitch1
+        # - leftPinkyMotorPitch1
+        # - leftThumbMotorPitch1
+        # - leftThumbMotorPitch2
+        # - leftThumbMotorRoll
         - rightIndexFingerMotorPitch1
         - rightMiddleFingerMotorPitch1
         - rightPinkyMotorPitch1
@@ -59,12 +59,8 @@ JointPositionGoalController:
         rightThumbMotorPitch2:
             has_position_limits: true
             min_position: 0.0
-            max_position: 1.658
+            max_position: 1.92
         rightThumbMotorRoll:
             has_position_limits: true
             min_position: 0.0
             max_position: 2.356
-        rightThumbMotorPitch1:
-            has_position_limits: true
-            min_position: 0
-            max_position: 1.6

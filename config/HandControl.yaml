@@ -43,7 +43,7 @@ JointPositionGoalController:
         rightIndexFingerMotorPitch1:
             has_position_limits: true
             min_position: 0.0
-            max_position: 3.0
+            max_position: 2.8
         rightMiddleFingerMotorPitch1:
             has_position_limits: true
             min_position: 0.0
@@ -51,15 +51,15 @@ JointPositionGoalController:
         rightPinkyMotorPitch1:
             has_position_limits: true
             min_position: 0.0
-            max_position: 3.0
+            max_position: 2.5
         rightThumbMotorPitch1:
             has_position_limits: true
             min_position: 0.0
-            max_position: 3.0
+            max_position: 1.6
         rightThumbMotorPitch2:
             has_position_limits: true
             min_position: 0.0
-            max_position: 3.0
+            max_position: 1.5 # depends on setting of rightThumbMotorPitch1
         rightThumbMotorRoll:
             has_position_limits: true
             min_position: 0.0

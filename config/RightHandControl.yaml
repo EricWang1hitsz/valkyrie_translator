@@ -2,10 +2,69 @@ JointPositionGoalController:
     type: valkyrie_translator/JointPositionGoalController
     publish_est_robot_state: true
     joints:
-      - rightThumbMotorPitch1
-    joint_velocity_limit: 0.1 # rad/s
+        - leftIndexFingerMotorPitch1
+        - leftMiddleFingerMotorPitch1
+        - leftPinkyMotorPitch1
+        - leftThumbMotorPitch1
+        - leftThumbMotorPitch2
+        - leftThumbMotorRoll
+        - rightIndexFingerMotorPitch1
+        - rightMiddleFingerMotorPitch1
+        - rightPinkyMotorPitch1
+        - rightThumbMotorPitch1
+        - rightThumbMotorPitch2
+        - rightThumbMotorRoll
+    joint_velocity_limit: 0.1 # 0.262 rad/s
     joint_limits:
-      rightThumbMotorPitch1:
-        has_position_limits: true
-        min_position: 0
-        max_position: 1.6
+        leftIndexFingerMotorPitch1:
+            has_position_limits: true
+            min_position: -1.57
+            max_position: 0.0
+        leftMiddleFingerMotorPitch1:
+            has_position_limits: true
+            min_position: -1.658
+            max_position: 0
+        leftPinkyMotorPitch1:
+            has_position_limits: true
+            min_position: -1.57
+            max_position: 0.0
+        leftThumbMotorPitch1:
+            has_position_limits: true
+            min_position: -1.658
+            max_position: 0.0
+        leftThumbMotorPitch2:
+            has_position_limits: true
+            min_position: -1.658
+            max_position: 0.0
+        leftThumbMotorRoll:
+            has_position_limits: true
+            min_position: 0.0
+            max_position: 2.356
+        rightIndexFingerMotorPitch1:
+            has_position_limits: true
+            min_position: 0
+            max_position: 1.57
+        rightMiddleFingerMotorPitch1:
+            has_position_limits: true
+            min_position: 0
+            max_position: 1.658
+        rightPinkyMotorPitch1:
+            has_position_limits: true
+            min_position: 0
+            max_position: 1.57
+        rightThumbMotorPitch1:
+            has_position_limits: true
+            min_position: 0.0
+            max_position: 1.658
+        rightThumbMotorPitch2:
+            has_position_limits: true
+            min_position: 0.0
+            max_position: 1.658
+        rightThumbMotorRoll:
+            has_position_limits: true
+            min_position: 0.0
+            max_position: 2.356
+        rightThumbMotorPitch1:
+            has_position_limits: true
+            min_position: 0
+            max_position: 1.6

@@ -95,12 +95,15 @@ namespace valkyrie_translator {
         std::map<std::string, double> q_delta_;
         std::map<std::string, double> q_start_;
         std::map<std::string, double> q_last_commanded_;
+        std::map<std::string, double> q_joint_limits_range_;
 
         double q_move_time_;
         std::map<std::string, double> latest_commands_;
 
         bool publish_est_robot_state_;
         std::string command_channel_;
+
+        bool commands_modulate_on_joint_limits_range_;
 
         ros::Time last_update_;
     };
@@ -140,6 +143,11 @@ namespace valkyrie_translator {
             publish_est_robot_state_ = false;
         }
 
+        // Determine whether commands modulate on joint limits range 0-100% or are desired joint angles
+        commands_modulate_on_joint_limits_range_ = false;
+        if (!controller_nh.getParam("commands_modulate_on_joint_limits_range", commands_modulate_on_joint_limits_range_))
+            ROS_INFO("Expect joint commands to modulate on joint limits range");
+
         // Check which joints we have been assigned to
         // If we have joints assigned to just us, claim those, otherwise claim all
         if (!controller_nh.getParam("joints", joint_names_))
@@ -167,6 +175,9 @@ namespace valkyrie_translator {
             ROS_INFO_STREAM("Joint Position Limits: " << joint_name << " has lower limit " << limits.min_position <<
                             " and upper limit " <<
                             limits.max_position);
+
+            if (commands_modulate_on_joint_limits_range_)
+                q_joint_limits_range_[joint_name] = std::abs(limits.min_position) + std::abs(limits.max_position);
         }
 
         // get a pointer to the position interface
@@ -344,6 +355,7 @@ namespace valkyrie_translator {
         if (!lcm_->good()) {
             std::cerr << "ERROR: handler lcm is not good()" << std::endl;
         }
+
         lcm_->subscribe(parent_.command_channel_, &JointPositionGoalController_LCMHandler::jointPositionGoalHandler,
                         this);
     }
@@ -363,8 +375,13 @@ namespace valkyrie_translator {
             if (search != parent_.latest_commands_.end()) {
                 std::string joint_name = msg->joint_name[i];
                 ROS_INFO_STREAM(joint_name << " got new q_desired " << msg->joint_position[i]);
+
                 double &q_desired = parent_.latest_commands_[joint_name];
-                q_desired = msg->joint_position[i];
+
+                if (parent_.commands_modulate_on_joint_limits_range_)
+                    q_desired = msg->joint_position[i] * parent_.q_joint_limits_range_[joint_name];
+                else
+                    q_desired = msg->joint_position[i];
 
                 double &q = parent_.q_measured_[joint_name];
                 double &q_delta = parent_.q_delta_[joint_name];

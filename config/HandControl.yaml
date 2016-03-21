@@ -1,6 +1,7 @@
 JointPositionGoalController:
     type: valkyrie_translator/JointPositionGoalController
     publish_est_robot_state: true
+    commands_modulate_on_joint_limits_range: true
     joints:
         # - leftIndexFingerMotorPitch1
         # - leftMiddleFingerMotorPitch1

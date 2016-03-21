@@ -28,6 +28,7 @@
 #include <lcm/lcm-cpp.hpp>
 #include "lcmtypes/bot_core/joint_state_t.hpp"
 #include "lcmtypes/bot_core/robot_state_t.hpp"
+#include "lcmtypes/bot_core/joint_angles_t.hpp"
 
 inline double clamp(double x, double lower, double upper) {
     return std::max(lower, std::min(upper, x));
@@ -43,7 +44,7 @@ namespace valkyrie_translator {
         virtual ~JointPositionGoalController_LCMHandler();
 
         void jointPositionGoalHandler(const lcm::ReceiveBuffer *rbuf, const std::string &channel,
-                                      const bot_core::robot_state_t *msg);
+                                      const bot_core::joint_angles_t *msg);
 
         void update();
 
@@ -364,7 +365,7 @@ namespace valkyrie_translator {
 
     void JointPositionGoalController_LCMHandler::jointPositionGoalHandler(const lcm::ReceiveBuffer *rbuf,
                                                                           const std::string &channel,
-                                                                          const bot_core::robot_state_t *msg) {
+                                                                          const bot_core::joint_angles_t *msg) {
         // Reset q_move_time_
         parent_.q_move_time_ = 0;
         parent_.last_update_ = ros::Time::now();

@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <vector>
 #include <set>
+#include <memory>
 
 #include <hardware_interface/joint_command_interface.h>
 #include <controller_interface/controller.h>
@@ -80,7 +81,7 @@ namespace valkyrie_translator {
 
         void publishCommandFeedbackToLCM(int64_t utime);
 
-        boost::shared_ptr<lcm::LCM> lcm_;
+        std::shared_ptr<lcm::LCM> lcm_;
         std::shared_ptr<JointPositionGoalController_LCMHandler> handler_;
 
         std::vector<std::string> joint_names_;
@@ -130,7 +131,7 @@ namespace valkyrie_translator {
         ROS_INFO_STREAM("Listening for commands on LCM channel " << command_channel_);
 
         // setup LCM
-        lcm_ = boost::shared_ptr<lcm::LCM>(new lcm::LCM);
+        lcm_ = std::shared_ptr<lcm::LCM>(new lcm::LCM);
         if (!lcm_->good()) {
             std::cerr << "ERROR: lcm is not good()" << std::endl;
             return false;

@@ -40,7 +40,8 @@ namespace valkyrie_translator {
 
     class JointPositionGoalController_LCMHandler {
     public:
-        explicit JointPositionGoalController_LCMHandler(JointPositionGoalController &parent, std::string command_channel_in);
+        explicit JointPositionGoalController_LCMHandler(JointPositionGoalController &parent,
+                                                        std::string command_channel_in);
 
         virtual ~JointPositionGoalController_LCMHandler();
 
@@ -106,6 +107,8 @@ namespace valkyrie_translator {
 
         bool publish_est_robot_state_;
         std::string command_channel_;
+        std::string command_feedback_channel_;
+        std::string control_state_channel_;
 
         bool commands_modulate_on_joint_limits_range_;
 
@@ -132,6 +135,20 @@ namespace valkyrie_translator {
         }
         ROS_INFO_STREAM("Listening for commands on LCM channel " << command_channel_);
 
+        // Retrieve LCM channel name on which to publish command feedback
+        if (!controller_nh.getParam("command_feedback_channel", command_feedback_channel_)) {
+            ROS_WARN("Cannot retrieve command feedback channel, defaulting to VAL_COMMAND_FEEDBACK");
+            command_channel_ = "VAL_COMMAND_FEEDBACK";
+        }
+        ROS_INFO_STREAM("Publishing command feedback on LCM channel " << command_feedback_channel_);
+
+        // Retrieve LCM channel name on which to listen to joint position commands on
+        if (!controller_nh.getParam("command_channel", command_channel_)) {
+            ROS_WARN("Cannot retrieve command channel, defaulting to JOINT_POSITION_GOAL");
+            command_channel_ = "JOINT_POSITION_GOAL";
+        }
+        ROS_INFO_STREAM("Listening for commands on LCM channel " << command_channel_);
+
         // setup LCM
         lcm_ = std::shared_ptr<lcm::LCM>(new lcm::LCM);
         if (!lcm_->good()) {
@@ -149,7 +166,9 @@ namespace valkyrie_translator {
 
         // Determine whether commands modulate on joint limits range 0-100% or are desired joint angles
         commands_modulate_on_joint_limits_range_ = false;
-        if (!controller_nh.getParam("commands_modulate_on_joint_limits_range", commands_modulate_on_joint_limits_range_))
+        if (controller_nh.getParam("commands_modulate_on_joint_limits_range",
+                                   commands_modulate_on_joint_limits_range_) &&
+            commands_modulate_on_joint_limits_range_)
             ROS_INFO("Expect joint commands to modulate on joint limits range");
 
         // Check which joints we have been assigned to
@@ -335,7 +354,7 @@ namespace valkyrie_translator {
             positionJointIndex++;
         }
 
-        lcm_->publish("VAL_CORE_ROBOT_STATE", &lcm_pose_msg);
+        lcm_->publish(control_state_channel_.c_str(), &lcm_pose_msg);
     }
 
     void JointPositionGoalController::publishCommandFeedbackToLCM(int64_t utime) {
@@ -355,17 +374,18 @@ namespace valkyrie_translator {
             positionJointIndex++;
         }
 
-        lcm_->publish("VAL_COMMAND_FEEDBACK", &lcm_commanded_msg);
+        lcm_->publish(command_feedback_channel_.c_str(), &lcm_commanded_msg);
     }
 
-    JointPositionGoalController_LCMHandler::JointPositionGoalController_LCMHandler(JointPositionGoalController &parent, std::string command_channel_in)
+    JointPositionGoalController_LCMHandler::JointPositionGoalController_LCMHandler(JointPositionGoalController &parent,
+                                                                                   std::string command_channel_in)
             : parent_(parent), command_channel_(command_channel_in) {
         lcm_ = std::shared_ptr<lcm::LCM>(new lcm::LCM);
         if (!lcm_->good()) {
             std::cerr << "ERROR: handler lcm is not good()" << std::endl;
         }
 
-        lcm_->subscribe(command_channel_in, &JointPositionGoalController_LCMHandler::jointPositionGoalHandler,
+        lcm_->subscribe(command_channel_.c_str(), &JointPositionGoalController_LCMHandler::jointPositionGoalHandler,
                         this);
     }
 

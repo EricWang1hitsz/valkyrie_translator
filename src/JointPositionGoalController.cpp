@@ -138,14 +138,14 @@ namespace valkyrie_translator {
         // Retrieve LCM channel name on which to publish command feedback
         if (!controller_nh.getParam("command_feedback_channel", command_feedback_channel_)) {
             ROS_WARN("Cannot retrieve command feedback channel, defaulting to VAL_COMMAND_FEEDBACK");
-            command_channel_ = "VAL_COMMAND_FEEDBACK";
+            command_feedback_channel_ = "VAL_COMMAND_FEEDBACK";
         }
         ROS_INFO_STREAM("Publishing command feedback on LCM channel " << command_feedback_channel_);
 
-        // Retrieve LCM channel name on which to listen to joint position commands on
-        if (!controller_nh.getParam("command_channel", command_channel_)) {
-            ROS_WARN("Cannot retrieve command channel, defaulting to JOINT_POSITION_GOAL");
-            command_channel_ = "JOINT_POSITION_GOAL";
+        // Retrieve LCM channel name on which to send joint positions (control state)
+        if (!controller_nh.getParam("control_state_channel", control_state_channel_)) {
+            ROS_WARN("Cannot retrieve control state channel, defaulting to VAL_CORE_ROBOT_STATE");
+            control_state_channel_ = "VAL_CORE_ROBOT_STATE";
         }
         ROS_INFO_STREAM("Listening for commands on LCM channel " << command_channel_);
 

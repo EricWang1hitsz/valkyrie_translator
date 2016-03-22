@@ -40,7 +40,7 @@ namespace valkyrie_translator {
 
     class JointPositionGoalController_LCMHandler {
     public:
-        explicit JointPositionGoalController_LCMHandler(JointPositionGoalController &parent);
+        explicit JointPositionGoalController_LCMHandler(JointPositionGoalController &parent, std::string command_channel_in);
 
         virtual ~JointPositionGoalController_LCMHandler();
 
@@ -52,6 +52,7 @@ namespace valkyrie_translator {
     private:
         JointPositionGoalController &parent_;
         std::shared_ptr<lcm::LCM> lcm_;
+        std::string command_channel_;
     };
 
     class JointPositionGoalController
@@ -138,7 +139,7 @@ namespace valkyrie_translator {
             return false;
         }
         handler_ = std::shared_ptr<JointPositionGoalController_LCMHandler>(
-                new JointPositionGoalController_LCMHandler(*this));
+                new JointPositionGoalController_LCMHandler(*this, command_channel_));
 
         // Determine whether to publish EST_ROBOT_STATE
         if (!controller_nh.getParam("publish_est_robot_state", publish_est_robot_state_)) {
@@ -357,14 +358,14 @@ namespace valkyrie_translator {
         lcm_->publish("VAL_COMMAND_FEEDBACK", &lcm_commanded_msg);
     }
 
-    JointPositionGoalController_LCMHandler::JointPositionGoalController_LCMHandler(JointPositionGoalController &parent)
-            : parent_(parent) {
+    JointPositionGoalController_LCMHandler::JointPositionGoalController_LCMHandler(JointPositionGoalController &parent, std::string command_channel_in)
+            : parent_(parent), command_channel_(command_channel_in) {
         lcm_ = std::shared_ptr<lcm::LCM>(new lcm::LCM);
         if (!lcm_->good()) {
             std::cerr << "ERROR: handler lcm is not good()" << std::endl;
         }
 
-        lcm_->subscribe(parent_.command_channel_, &JointPositionGoalController_LCMHandler::jointPositionGoalHandler,
+        lcm_->subscribe(command_channel_in, &JointPositionGoalController_LCMHandler::jointPositionGoalHandler,
                         this);
     }
 

@@ -41,7 +41,7 @@ namespace valkyrie_translator {
     class JointPositionGoalController_LCMHandler {
     public:
         explicit JointPositionGoalController_LCMHandler(JointPositionGoalController &parent,
-                                                        std::string command_channel_in);
+                                                        const std::string command_channel_in);
 
         virtual ~JointPositionGoalController_LCMHandler();
 
@@ -378,14 +378,15 @@ namespace valkyrie_translator {
     }
 
     JointPositionGoalController_LCMHandler::JointPositionGoalController_LCMHandler(JointPositionGoalController &parent,
-                                                                                   std::string command_channel_in)
+                                                                                   const std::string command_channel_in)
             : parent_(parent), command_channel_(command_channel_in) {
         lcm_ = std::shared_ptr<lcm::LCM>(new lcm::LCM);
         if (!lcm_->good()) {
             std::cerr << "ERROR: handler lcm is not good()" << std::endl;
         }
 
-        lcm_->subscribe(command_channel_.c_str(), &JointPositionGoalController_LCMHandler::jointPositionGoalHandler,
+        std::cout << "Subscribing to " << command_channel_in << std::endl;
+        lcm_->subscribe(command_channel_in, &JointPositionGoalController_LCMHandler::jointPositionGoalHandler,
                         this);
     }
 

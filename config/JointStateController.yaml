@@ -1,0 +1,16 @@
+JointStateController:
+    type: valkyrie_translator/JointStateController
+    joints:
+        - rightIndexFingerPitch1
+        - rightIndexFingerPitch2
+        - rightIndexFingerPitch3
+        - rightMiddleFingerPitch1
+        - rightMiddleFingerPitch2
+        - rightMiddleFingerPitch3
+        - rightPinkyPitch1
+        - rightPinkyPitch2
+        - rightPinkyPitch3
+        - rightThumbPitch1
+        - rightThumbPitch2
+        - rightThumbPitch3
+        - rightThumbRoll

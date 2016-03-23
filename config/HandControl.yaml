@@ -1,9 +1,11 @@
 JointPositionGoalController:
     type: valkyrie_translator/JointPositionGoalController
-    publish_est_robot_state: true
+    publish_est_robot_state: false
     command_channel: "DESIRED_HAND_ANGLES"
     commands_modulate_on_joint_limits_range: true
-    joints:
+    command_feedback_channel: "HAND_COMMAND_FEEDBACK"
+    control_state_channel: "CORE_ROBOT_STATE" # dev setting
+    joints: # Position-commanded joints
         # - leftIndexFingerMotorPitch1
         # - leftMiddleFingerMotorPitch1
         # - leftPinkyMotorPitch1

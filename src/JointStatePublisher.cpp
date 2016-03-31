@@ -105,4 +105,4 @@ namespace valkyrie_translator {
 
 }  // namespace valkyrie_translator
 
-PLUGINLIB_EXPORT_CLASS(valkyrie_translator::JointStateController, controller_interface::ControllerBase)
+PLUGINLIB_EXPORT_CLASS(valkyrie_translator::JointStatePublisher, controller_interface::ControllerBase)

@@ -89,7 +89,7 @@ namespace valkyrie_translator {
 
         // Initialise robot state message
         core_robot_state_.utime = 0;
-        core_robot_state_.num_joints = (int16_t) number_of_joint_interfaces_;
+        core_robot_state_.num_joints = static_cast<int16_t>(number_of_joint_interfaces_);
         core_robot_state_.joint_name.assign(number_of_joint_interfaces_, "");
         core_robot_state_.joint_position.assign(number_of_joint_interfaces_, (const float &) 0.);
         core_robot_state_.joint_velocity.assign(number_of_joint_interfaces_, (const float &) 0.);

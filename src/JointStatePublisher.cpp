@@ -35,9 +35,9 @@ namespace valkyrie_translator {
         void stopping(const ros::Time &time);
 
     protected:
-        virtual bool initRequest(hardware_interface::RobotHW *robot_hw,
-                                 ros::NodeHandle &root_nh, ros::NodeHandle &controller_nh,
-                                 std::set<std::string> &claimed_resources) override;
+        bool initRequest(hardware_interface::RobotHW *robot_hw,
+                         ros::NodeHandle &root_nh, ros::NodeHandle &controller_nh,
+                         std::set<std::string> &claimed_resources) override;
 
     private:
         void publishEstRobotState(int64_t utime);

@@ -1,5 +1,5 @@
-JointStateController:
-    type: valkyrie_translator/JointStateController
+JointStatePublisher:
+    type: valkyrie_translator/JointStatePublisher
     joints:
         - rightIndexFingerPitch1
         - rightIndexFingerPitch2

@@ -1,0 +1,7 @@
+<library path="lib/libJointStatePublisher">
+    <class name="valkyrie_translator/JointStatePublisher" type="valkyrie_translator::JointStatePublisher" base_class_type="controller_interface::ControllerBase">
+        <description>
+            Controller publishing robot state information to LCM
+        </description>
+    </class>
+</library>

@@ -19,11 +19,11 @@
 
 
 namespace valkyrie_translator {
-    class JointStateController;
+    class JointStatePublisher;
 
-    class JointStateController : public controller_interface::Controller<hardware_interface::JointStateInterface> {
+    class JointStatePublisher : public controller_interface::Controller<hardware_interface::JointStateInterface> {
     public:
-        JointStateController() { }
+        JointStatePublisher() { }
 
         bool init(hardware_interface::JointStateInterface *hw, ros::NodeHandle &root_nh, ros::NodeHandle &controller_nh);
 
@@ -43,7 +43,7 @@ namespace valkyrie_translator {
     };
 
 
-    bool JointStateController::init(hardware_interface::JointStateInterface *hw, ros::NodeHandle &root_nh, ros::NodeHandle &controller_nh) {
+    bool JointStatePublisher::init(hardware_interface::JointStateInterface *hw, ros::NodeHandle &root_nh, ros::NodeHandle &controller_nh) {
         // Retrieve all joint names from the hardware interface
         joint_names_ = hw->getNames();
         number_of_joint_interfaces_ = static_cast<unsigned int>(joint_names_.size());
@@ -87,9 +87,9 @@ namespace valkyrie_translator {
         return true;
     }
 
-    void JointStateController::starting(const ros::Time &time) { }
+    void JointStatePublisher::starting(const ros::Time &time) { }
 
-    void JointStateController::update(const ros::Time &time, const ros::Duration &period) {
+    void JointStatePublisher::update(const ros::Time &time, const ros::Duration &period) {
         est_robot_state_.utime = static_cast<int64_t>(time.toSec() * 1e6);
 
         for (unsigned int i = 0; i < number_of_joint_interfaces_; i++) {
@@ -101,7 +101,7 @@ namespace valkyrie_translator {
         lcm_->publish("EST_ROBOT_STATE", &est_robot_state_);
     }
 
-    void JointStateController::stopping(const ros::Time &time) { }
+    void JointStatePublisher::stopping(const ros::Time &time) { }
 
 }  // namespace valkyrie_translator
 

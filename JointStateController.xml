@@ -1,7 +1,0 @@
-<library path="lib/libJointStateController">
-    <class name="valkyrie_translator/JointStateController" type="valkyrie_translator::JointStateController" base_class_type="controller_interface::ControllerBase">
-        <description>
-            Controller publishing joint state information to LCM
-        </description>
-    </class>
-</library>

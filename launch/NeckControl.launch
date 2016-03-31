@@ -4,6 +4,6 @@
   <rosparam file="$(find valkyrie_translator)/config/NeckControl.yaml" command="load"/>
 
   <!-- load the controllers -->
-  <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false" output="screen" args="JointPositionGoalController"/>
+  <node name="neckcontroller_spawner" pkg="controller_manager" type="spawner" respawn="false" output="screen" args="JointPositionGoalController"/>
 
 </launch>

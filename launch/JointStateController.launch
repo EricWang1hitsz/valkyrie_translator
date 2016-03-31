@@ -4,5 +4,5 @@
   <rosparam file="$(find valkyrie_translator)/config/JointStateController.yaml" command="load"/>
 
   <!-- load the controllers -->
-  <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false" output="screen" args="JointStateController"/>
+  <node name="jointstatepublisher_spawner" pkg="controller_manager" type="spawner" respawn="false" output="screen" args="JointStateController"/>
 </launch>

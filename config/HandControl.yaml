@@ -1,4 +1,4 @@
-JointPositionGoalController:
+HandPositionGoalController:
     type: valkyrie_translator/JointPositionGoalController
     publish_est_robot_state: false
     command_channel: "DESIRED_HAND_ANGLES"
@@ -18,6 +18,20 @@ JointPositionGoalController:
         - rightThumbMotorPitch1
         - rightThumbMotorPitch2
         - rightThumbMotorRoll
+    joint_state_joints: # Publish joint state for joints that are not commanded
+        - rightIndexFingerPitch1
+        - rightIndexFingerPitch2
+        - rightIndexFingerPitch3
+        - rightMiddleFingerPitch1
+        - rightMiddleFingerPitch2
+        - rightMiddleFingerPitch3
+        - rightPinkyPitch1
+        - rightPinkyPitch2
+        - rightPinkyPitch3
+        - rightThumbPitch1
+        - rightThumbPitch2
+        - rightThumbPitch3
+        - rightThumbRoll
     joint_velocity_limit: 0.262 # rad/s
     joint_limits:
         leftIndexFingerMotorPitch1:

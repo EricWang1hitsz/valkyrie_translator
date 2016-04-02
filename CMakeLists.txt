@@ -17,7 +17,7 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 catkin_package(
-  LIBRARIES LCM2ROSControl JointPositionGoalController
+  LIBRARIES LCM2ROSControl JointPositionGoalController JointStatePublisher
   CATKIN_DEPENDS roscpp std_msgs hardware_interface controller_interface joint_limits_interface
   DEPENDS system_lib pluginlib
 )
@@ -39,12 +39,16 @@ add_library(JointPositionGoalController src/JointPositionGoalController.cpp)
 target_link_libraries(JointPositionGoalController ${catkin_LIBRARIES})
 pods_use_pkg_config_packages(JointPositionGoalController lcm lcmtypes_bot2-core)
 
+add_library(JointStatePublisher src/JointStatePublisher.cpp)
+target_link_libraries(JointStatePublisher ${catkin_LIBRARIES})
+pods_use_pkg_config_packages(JointStatePublisher lcm lcmtypes_bot2-core)
+
 
 #############
 ## Install ##
 #############
 
-install(TARGETS LCM2ROSControl JointPositionGoalController
+install(TARGETS LCM2ROSControl JointPositionGoalController JointStatePublisher
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -57,9 +61,10 @@ install(DIRECTORY config/
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/config
   PATTERN ".svn" EXCLUDE
 )
-install(FILES LCM2ROSControl.xml JointPositionGoalController.xml
+install(FILES LCM2ROSControl.xml JointPositionGoalController.xml JointStatePublisher.xml
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
 
 set(ROSLINT_CPP_OPTS "--filter=-whitespace/line_length,-runtime/references,-runtime/indentation_namespace,-whitespace/braces,-readability/todo")
-roslint_cpp(src/JointPositionGoalController.cpp)
+
+roslint_cpp(src/JointPositionGoalController.cpp src/JointStatePublisher.cpp)

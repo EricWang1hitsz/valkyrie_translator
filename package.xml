@@ -28,6 +28,7 @@
   <!-- The export tag contains other, unspecified, tags -->
   <export>
     <controller_interface plugin="${prefix}/LCM2ROSControl.xml"/>
+    <controller_interface plugin="${prefix}/JointStatePublisher.xml"/>
     <controller_interface plugin="${prefix}/JointPositionGoalController.xml"/>
   </export>
 </package>

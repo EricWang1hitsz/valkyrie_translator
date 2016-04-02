@@ -139,7 +139,7 @@ namespace valkyrie_translator {
                 joint_state_handles_.push_back(hw->getHandle(joint_names_[i]));
                 core_robot_state_.joint_name[i] = joint_names_[i];
             } catch (const hardware_interface::HardwareInterfaceException& e) {
-                 ROS_ERROR_STREAM("Could not retrieve handle for " << joint_names_[i] << ": " << e.what());
+                ROS_ERROR_STREAM("Could not retrieve handle for " << joint_names_[i] << ": " << e.what());
             }
         }
 
@@ -159,7 +159,11 @@ namespace valkyrie_translator {
 
             const std::vector<std::string> &imu_names = imu_hw->getNames();
             for (unsigned int i = 0; i < imu_names.size(); i++) {
-                imu_sensor_handles_.insert(std::make_pair(imu_names[i], imu_hw->getHandle(imu_names[i])));
+                try {
+                    imu_sensor_handles_.insert(std::make_pair(imu_names[i], imu_hw->getHandle(imu_names[i])));
+                } catch (const hardware_interface::HardwareInterfaceException& e) {
+                    ROS_ERROR_STREAM("Could not retrieve handle for " << imu_names[i] << ": " << e.what());
+                }
             }
         }
 
@@ -179,8 +183,12 @@ namespace valkyrie_translator {
 
         const std::vector<std::string> &force_torque_names = force_torque_hw->getNames();
         for (unsigned int i = 0; i < force_torque_names.size(); i++) {
-            force_torque_handles_.insert(
-                    std::make_pair(force_torque_names[i], force_torque_hw->getHandle(force_torque_names[i])));
+            try {
+                force_torque_handles_.insert(
+                        std::make_pair(force_torque_names[i], force_torque_hw->getHandle(force_torque_names[i])));
+            } catch (const hardware_interface::HardwareInterfaceException& e) {
+                ROS_ERROR_STREAM("Could not retrieve handle for " << force_torque_names[i] << ": " << e.what());
+            }
         }
 
         state_ = INITIALIZED;

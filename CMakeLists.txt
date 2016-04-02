@@ -33,11 +33,11 @@ include_directories(
 ######################################################
 add_library(LCM2ROSControl src/LCM2ROSControl.cpp)
 target_link_libraries(LCM2ROSControl ${catkin_LIBRARIES} )
-pods_use_pkg_config_packages(LCM2ROSControl lcm drc-lcmtypes lcmtypes_bot2-core)
+pods_use_pkg_config_packages(LCM2ROSControl lcm lcmtypes_bot2-core)
 
 add_library(JointPositionGoalController src/JointPositionGoalController.cpp)
 target_link_libraries(JointPositionGoalController ${catkin_LIBRARIES})
-pods_use_pkg_config_packages(JointPositionGoalController lcm drc-lcmtypes lcmtypes_bot2-core)
+pods_use_pkg_config_packages(JointPositionGoalController lcm lcmtypes_bot2-core)
 
 add_library(JointStatePublisher src/JointStatePublisher.cpp)
 target_link_libraries(JointStatePublisher ${catkin_LIBRARIES})

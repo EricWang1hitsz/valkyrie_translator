@@ -72,18 +72,28 @@ namespace valkyrie_translator {
         }
 
         // Retrieve all joint names from the hardware interface
-        joint_names_ = hw->getNames();
+        std::vector<std::string> available_joint_state_handles = hw->getNames();
 
         // Filter joint names to exclude the hand motors
-        std::cout << "Number of joints before filtering: " << std::to_string(joint_names_.size()) << std::endl;
-        for (std::vector<std::string>::iterator it = joint_names_.begin(); it != joint_names_.end(); ++it) {
-            std::string joint_name = *it;
-            if (joint_name.find("Motor") != std::string::npos) {
-                std::cout << "Remove " << joint_name << std::endl;
-                joint_names_.erase(it);
-            }
+        // std::cout << "Number of joints before filtering: " << std::to_string(available_joint_state_handles.size()) << std::endl;
+        for (unsigned int i = 0; i < available_joint_state_handles.size(); ++i) {
+            if (available_joint_state_handles[i].find("Motor") == std::string::npos)
+                joint_names_.push_back(available_joint_state_handles[i]);
         }
-        std::cout << "Number of joints after filtering: " << std::to_string(joint_names_.size()) << std::endl;
+        // std::cout << "Number of joints after filtering: " << std::to_string(joint_names_.size()) << std::endl;
+
+        // Retrieve joint handles and init est_robot_state_msg_
+        int core_robot_state_msg_index = 0;
+        for (unsigned int i = 0; i < number_of_joint_interfaces_; i++) {
+            // try {
+                // ROS_INFO_STREAM("Joint " << joint_names_[i]);
+                joint_state_handles_.push_back(hw->getHandle(joint_names_[i]));
+                core_robot_state_.joint_name[core_robot_state_msg_index] = joint_names_[i];
+                ++core_robot_state_msg_index;
+            // } catch (const hardware_interface::HardwareInterfaceException& e) {
+            //     ROS_ERROR_STREAM("Could not retrieve handle for " << joint_names_[i] << ": " << e.what());
+            // }
+        }
 
         number_of_joint_interfaces_ = static_cast<unsigned int>(joint_names_.size());
 
@@ -133,14 +143,6 @@ namespace valkyrie_translator {
             core_robot_state_.force_torque.l_hand_torque[i] = 0.0;
             core_robot_state_.force_torque.r_hand_force[i] = 0.0;
             core_robot_state_.force_torque.r_hand_torque[i] = 0.0;
-        }
-
-        // Retrieve joint handles and init est_robot_state_msg_
-        for (unsigned int i = 0; i < number_of_joint_interfaces_; i++) {
-            ROS_INFO_STREAM("Joint " << joint_names_[i]);  // TODO: debug, remove
-
-            joint_state_handles_.push_back(hw->getHandle(joint_names_[i]));
-            core_robot_state_.joint_name[i] = joint_names_[i];
         }
 
         // Retrieve parameter whether to publish IMU sensor readings

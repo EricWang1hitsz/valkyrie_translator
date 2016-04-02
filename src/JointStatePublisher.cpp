@@ -73,6 +73,18 @@ namespace valkyrie_translator {
 
         // Retrieve all joint names from the hardware interface
         joint_names_ = hw->getNames();
+
+        // Filter joint names to exclude the hand motors
+        std::cout << "Number of joints before filtering: " << std::to_string(joint_names_.size()) << std::endl;
+        for (std::vector<std::string>::iterator it = joint_names_.begin(); it != joint_names_.end(); ++it) {
+            std::string joint_name = *it;
+            if (joint_name.find("Motor") != std::string::npos) {
+                std::cout << "Remove " << joint_name << std::endl;
+                joint_names_.erase(it);
+            }
+        }
+        std::cout << "Number of joints after filtering: " << std::to_string(joint_names_.size()) << std::endl;
+
         number_of_joint_interfaces_ = static_cast<unsigned int>(joint_names_.size());
 
         // Setup LCM

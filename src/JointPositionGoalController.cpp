@@ -352,7 +352,12 @@ namespace valkyrie_translator {
         unsigned int positionJointIndex = 0;
         for (auto const &joint_name : joint_names_) {
             lcm_pose_msg.joint_name[positionJointIndex] = joint_name;
-            lcm_pose_msg.joint_position[positionJointIndex] = static_cast<float>(q_measured_[joint_name]);
+
+            if (commands_modulate_on_joint_limits_range_)
+                lcm_pose_msg.joint_position[positionJointIndex] = static_cast<float>(clamp(q_measured_[joint_name] / q_joint_limits_range_, 0.0, 1.0));
+            else
+                lcm_pose_msg.joint_position[positionJointIndex] = static_cast<float>(q_measured_[joint_name]);
+
             lcm_pose_msg.joint_velocity[positionJointIndex] = static_cast<float>(qd_measured_[joint_name]);
             positionJointIndex++;
         }

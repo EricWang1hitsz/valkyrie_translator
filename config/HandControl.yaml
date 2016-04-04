@@ -4,7 +4,8 @@ HandPositionGoalController:
     command_channel: "DESIRED_HAND_ANGLES"
     commands_modulate_on_joint_limits_range: true
     command_feedback_channel: "HAND_COMMAND_FEEDBACK"
-    control_state_channel: "CORE_ROBOT_STATE" # dev setting
+    control_state_channel: "HAND_STATE"
+    control_state_publish_frequency: 50
     joints: # Position-commanded joints
         # - leftIndexFingerMotorPitch1
         # - leftMiddleFingerMotorPitch1
@@ -18,20 +19,6 @@ HandPositionGoalController:
         - rightThumbMotorPitch1
         - rightThumbMotorPitch2
         - rightThumbMotorRoll
-    joint_state_joints: # Publish joint state for joints that are not commanded
-        - rightIndexFingerPitch1
-        - rightIndexFingerPitch2
-        - rightIndexFingerPitch3
-        - rightMiddleFingerPitch1
-        - rightMiddleFingerPitch2
-        - rightMiddleFingerPitch3
-        - rightPinkyPitch1
-        - rightPinkyPitch2
-        - rightPinkyPitch3
-        - rightThumbPitch1
-        - rightThumbPitch2
-        - rightThumbPitch3
-        - rightThumbRoll
     joint_velocity_limit: 0.262 # rad/s
     joint_limits:
         leftIndexFingerMotorPitch1:

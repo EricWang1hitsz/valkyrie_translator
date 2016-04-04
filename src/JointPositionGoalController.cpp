@@ -110,6 +110,7 @@ namespace valkyrie_translator {
         std::string command_feedback_channel_;
         std::string control_state_channel_;
         int control_state_publish_frequency_;
+        int control_state_publish_every_tics_;
         uintmax_t control_state_publish_counter_;
 
         bool commands_modulate_on_joint_limits_range_;
@@ -152,7 +153,8 @@ namespace valkyrie_translator {
         if (!controller_nh.getParam("control_state_publish_frequency", control_state_publish_frequency_))
             control_state_publish_frequency_ = 500;
 
-        ROS_INFO_STREAM("Publishing control state on LCM channel " << command_channel_ << " with " << control_state_publish_frequency_ << " Hz");
+        control_state_publish_every_tics_ = static_cast<int>(std::floor(500 / control_state_publish_frequency_));
+        ROS_INFO_STREAM("Publishing control state on LCM channel " << command_channel_ << " with " << control_state_publish_frequency_ << " Hz (every " << control_state_publish_every_tics_ << " tics)");
         control_state_publish_counter_ = 0;
 
         // setup LCM
@@ -291,7 +293,7 @@ namespace valkyrie_translator {
         }
 
         // Throttle output according to control_state_publish_frequency_
-        if (control_state_publish_counter_ % int(std::floor(control_state_publish_frequency_/500)) == 0) {
+        if (control_state_publish_counter_ % control_state_publish_every_tics_ == 0) {
             publishCoreRobotStateToLCM(utime);
             publishCommandFeedbackToLCM(utime);
         }

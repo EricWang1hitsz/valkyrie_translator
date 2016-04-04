@@ -87,7 +87,6 @@ namespace valkyrie_translator {
         std::shared_ptr<JointPositionGoalController_LCMHandler> handler_;
 
         std::vector<std::string> joint_names_;
-        std::vector<std::string> joint_state_joint_names_;
         std::map<std::string, hardware_interface::JointHandle> positionJointHandles_;
         size_t number_of_joint_interfaces_;
 
@@ -175,11 +174,6 @@ namespace valkyrie_translator {
         // If we have joints assigned to just us, claim those, otherwise claim all
         if (!controller_nh.getParam("joints", joint_names_))
             ROS_INFO_STREAM("Could not get assigned list of joints, will resume to claim all");
-
-        // Get additional joints which are joint-state-publishing only (no command)
-        // TODO: WIP
-        if (controller_nh.getParam("joint_state_joints", joint_state_joint_names_))
-            ROS_INFO_STREAM("Publishing of joint states for additional joints");
 
         auto n_joints_ = joint_names_.size();
         bool use_joint_selection = true;

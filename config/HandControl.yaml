@@ -5,6 +5,7 @@ HandPositionGoalController:
     commands_modulate_on_joint_limits_range: true
     command_feedback_channel: "HAND_COMMAND_FEEDBACK"
     control_state_channel: "HAND_STATE"
+    control_state_publish_frequency: 50
     joints: # Position-commanded joints
         # - leftIndexFingerMotorPitch1
         # - leftMiddleFingerMotorPitch1

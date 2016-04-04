@@ -12,6 +12,7 @@
  * wolfgang.merkt@ed.ac.uk, 201603**
  */
 
+#include <cmath>
 #include <map>
 #include <string>
 #include <algorithm>
@@ -108,6 +109,8 @@ namespace valkyrie_translator {
         std::string command_channel_;
         std::string command_feedback_channel_;
         std::string control_state_channel_;
+        unsigned int control_state_publish_frequency_;
+        uintmax_t control_state_publish_counter_;
 
         bool commands_modulate_on_joint_limits_range_;
 
@@ -146,7 +149,11 @@ namespace valkyrie_translator {
             ROS_WARN("Cannot retrieve control state channel, defaulting to VAL_CORE_ROBOT_STATE");
             control_state_channel_ = "VAL_CORE_ROBOT_STATE";
         }
-        ROS_INFO_STREAM("Listening for commands on LCM channel " << command_channel_);
+        if (!controller_nh.getParam("control_state_publish_frequency", control_state_publish_frequency_))
+            control_state_publish_frequency_ = 500;
+
+        ROS_INFO_STREAM("Publishing control state on LCM channel " << command_channel_ << " with " << control_state_publish_frequency_ << " Hz");
+        control_state_publish_counter_ = 0;
 
         // setup LCM
         lcm_ = std::shared_ptr<lcm::LCM>(new lcm::LCM);
@@ -283,8 +290,12 @@ namespace valkyrie_translator {
             iter->second.setCommand(q_command_with_position_limits_enforced);
         }
 
-        publishCoreRobotStateToLCM(utime);
-        publishCommandFeedbackToLCM(utime);
+        // Throttle output according to control_state_publish_frequency_
+        if (control_state_publish_counter_ % int(std::floor(control_state_publish_frequency_/500)) == 0) {
+            publishCoreRobotStateToLCM(utime);
+            publishCommandFeedbackToLCM(utime);
+        }
+        control_state_publish_counter_++;
 
         if (publish_est_robot_state_)
             publishEstimatedRobotStateToLCM(utime);
@@ -329,9 +340,7 @@ namespace valkyrie_translator {
     }
 
     void JointPositionGoalController::publishCoreRobotStateToLCM(int64_t utime) {
-        // VAL_CORE_ROBOT_STATE
-        // push out the joint states for all joints we see advertised
-        // and also the commanded torques, for reference
+        // VAL_CORE_ROBOT_STATE, pushes out the joint states for all joints
         bot_core::joint_state_t lcm_pose_msg;
         lcm_pose_msg.utime = utime;
         lcm_pose_msg.num_joints = (int16_t) number_of_joint_interfaces_;

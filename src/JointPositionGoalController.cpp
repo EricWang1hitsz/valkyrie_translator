@@ -109,7 +109,7 @@ namespace valkyrie_translator {
         std::string command_channel_;
         std::string command_feedback_channel_;
         std::string control_state_channel_;
-        unsigned int control_state_publish_frequency_;
+        int control_state_publish_frequency_;
         uintmax_t control_state_publish_counter_;
 
         bool commands_modulate_on_joint_limits_range_;
@@ -354,7 +354,7 @@ namespace valkyrie_translator {
             lcm_pose_msg.joint_name[positionJointIndex] = joint_name;
 
             if (commands_modulate_on_joint_limits_range_)
-                lcm_pose_msg.joint_position[positionJointIndex] = static_cast<float>(clamp(q_measured_[joint_name] / q_joint_limits_range_, 0.0, 1.0));
+                lcm_pose_msg.joint_position[positionJointIndex] = static_cast<float>(clamp(q_measured_[joint_name] / q_joint_limits_range_[joint_name], 0.0, 1.0));
             else
                 lcm_pose_msg.joint_position[positionJointIndex] = static_cast<float>(q_measured_[joint_name]);
 

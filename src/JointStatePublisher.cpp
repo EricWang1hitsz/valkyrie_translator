@@ -15,6 +15,7 @@
 #include <pluginlib/class_list_macros.h>
 
 #include <lcm/lcm-cpp.hpp>
+#include "lcmtypes/bot_core/joint_state_t.hpp"
 #include "lcmtypes/bot_core/robot_state_t.hpp"
 #include "lcmtypes/bot_core/six_axis_force_torque_array_t.hpp"
 #include "lcmtypes/bot_core/ins_t.hpp"
@@ -46,6 +47,8 @@ namespace valkyrie_translator {
 
         void publishForceTorqueReadings(int64_t utime);
 
+        void publishCoreRobotState(int64_t utime);
+
         std::vector<std::string> joint_names_;
         std::vector<hardware_interface::JointStateHandle> joint_state_handles_;
         std::map<std::string, hardware_interface::ImuSensorHandle> imu_sensor_handles_;
@@ -53,11 +56,13 @@ namespace valkyrie_translator {
         std::shared_ptr<lcm::LCM> lcm_;
         unsigned int number_of_joint_interfaces_;
 
-        bot_core::robot_state_t core_robot_state_;
+        bot_core::joint_state_t core_robot_state_;
+        bot_core::robot_state_t est_robot_state_;
         std::string core_robot_state_channel_;
 
         bool publish_imu_readings_;
         bool publish_separate_force_torque_readings_;
+        bool publish_est_robot_state_;
     };
 
 
@@ -94,54 +99,68 @@ namespace valkyrie_translator {
         // Retrieve channel name for the core robot state message (defaults to CORE_ROBOT_STATE)
         if (!controller_nh.getParam("core_robot_state_channel", core_robot_state_channel_))
             core_robot_state_channel_ = "CORE_ROBOT_STATE";
-        ROS_INFO_STREAM("Publishing robot state to " << core_robot_state_channel_);
+        ROS_INFO_STREAM("Publishing core robot state to " << core_robot_state_channel_);
 
-        // Initialise robot state message
+        // Initialise core robot state message
         core_robot_state_.utime = 0;
         core_robot_state_.num_joints = static_cast<int16_t>(number_of_joint_interfaces_);
         core_robot_state_.joint_name.assign(number_of_joint_interfaces_, "");
         core_robot_state_.joint_position.assign(number_of_joint_interfaces_, (const float &) 0.);
         core_robot_state_.joint_velocity.assign(number_of_joint_interfaces_, (const float &) 0.);
         core_robot_state_.joint_effort.assign(number_of_joint_interfaces_, (const float &) 0.);
-        core_robot_state_.pose.translation.x = 0.0;
-        core_robot_state_.pose.translation.y = 0.0;
-        core_robot_state_.pose.translation.z = 0.0;
-        core_robot_state_.pose.rotation.w = 1.0;
-        core_robot_state_.pose.rotation.x = 0.0;
-        core_robot_state_.pose.rotation.y = 0.0;
-        core_robot_state_.pose.rotation.z = 0.0;
-        core_robot_state_.twist.linear_velocity.x = 0.0;
-        core_robot_state_.twist.linear_velocity.y = 0.0;
-        core_robot_state_.twist.linear_velocity.z = 0.0;
-        core_robot_state_.twist.angular_velocity.x = 0.0;
-        core_robot_state_.twist.angular_velocity.y = 0.0;
-        core_robot_state_.twist.angular_velocity.z = 0.0;
 
-        // Initialise F/T sensors in core_robot_state_
-        core_robot_state_.force_torque.l_foot_force_z = 0.0;
-        core_robot_state_.force_torque.l_foot_torque_x = 0.0;
-        core_robot_state_.force_torque.l_foot_torque_y = 0.0;
-        core_robot_state_.force_torque.r_foot_force_z = 0.0;
-        core_robot_state_.force_torque.r_foot_torque_x = 0.0;
-        core_robot_state_.force_torque.r_foot_torque_y = 0.0;
+        // Initialise robot state message
+        est_robot_state_.utime = 0;
+        est_robot_state_.num_joints = static_cast<int16_t>(number_of_joint_interfaces_);
+        est_robot_state_.joint_name.assign(number_of_joint_interfaces_, "");
+        est_robot_state_.joint_position.assign(number_of_joint_interfaces_, (const float &) 0.);
+        est_robot_state_.joint_velocity.assign(number_of_joint_interfaces_, (const float &) 0.);
+        est_robot_state_.joint_effort.assign(number_of_joint_interfaces_, (const float &) 0.);
+        est_robot_state_.pose.translation.x = 0.0;
+        est_robot_state_.pose.translation.y = 0.0;
+        est_robot_state_.pose.translation.z = 0.0;
+        est_robot_state_.pose.rotation.w = 1.0;
+        est_robot_state_.pose.rotation.x = 0.0;
+        est_robot_state_.pose.rotation.y = 0.0;
+        est_robot_state_.pose.rotation.z = 0.0;
+        est_robot_state_.twist.linear_velocity.x = 0.0;
+        est_robot_state_.twist.linear_velocity.y = 0.0;
+        est_robot_state_.twist.linear_velocity.z = 0.0;
+        est_robot_state_.twist.angular_velocity.x = 0.0;
+        est_robot_state_.twist.angular_velocity.y = 0.0;
+        est_robot_state_.twist.angular_velocity.z = 0.0;
+
+        // Initialise F/T sensors in est_robot_state_
+        est_robot_state_.force_torque.l_foot_force_z = 0.0;
+        est_robot_state_.force_torque.l_foot_torque_x = 0.0;
+        est_robot_state_.force_torque.l_foot_torque_y = 0.0;
+        est_robot_state_.force_torque.r_foot_force_z = 0.0;
+        est_robot_state_.force_torque.r_foot_torque_x = 0.0;
+        est_robot_state_.force_torque.r_foot_torque_y = 0.0;
 
         for (unsigned int i = 0; i < 3; i++) {
-            core_robot_state_.force_torque.l_hand_force[i] = 0.0;
-            core_robot_state_.force_torque.l_hand_torque[i] = 0.0;
-            core_robot_state_.force_torque.r_hand_force[i] = 0.0;
-            core_robot_state_.force_torque.r_hand_torque[i] = 0.0;
+            est_robot_state_.force_torque.l_hand_force[i] = 0.0;
+            est_robot_state_.force_torque.l_hand_torque[i] = 0.0;
+            est_robot_state_.force_torque.r_hand_force[i] = 0.0;
+            est_robot_state_.force_torque.r_hand_torque[i] = 0.0;
         }
 
-        // Retrieve joint handles and init core_robot_state_msg_
+        // Retrieve joint handles and init est_robot_state_msg_
         for (unsigned int i = 0; i < joint_names_.size(); i++) {
             try {
                 // ROS_INFO_STREAM("Joint " << joint_names_[i]);
                 joint_state_handles_.push_back(hw->getHandle(joint_names_[i]));
+                est_robot_state_.joint_name[i] = joint_names_[i];
                 core_robot_state_.joint_name[i] = joint_names_[i];
             } catch (const hardware_interface::HardwareInterfaceException& e) {
                 ROS_ERROR_STREAM("Could not retrieve handle for " << joint_names_[i] << ": " << e.what());
             }
         }
+
+        // Retrieve parameter whether to publish EST_ROBOT_STATE (robot_state_t)
+        if (!controller_nh.getParam("publish_est_robot_state", publish_est_robot_state_))
+            publish_est_robot_state_ = true;
+        ROS_INFO_STREAM("Publishing EST_ROBOT_STATE: " << std::to_string(publish_imu_readings_));
 
         // Retrieve parameter whether to publish IMU sensor readings
         if (!controller_nh.getParam("publish_imu_readings", publish_imu_readings_))
@@ -201,7 +220,10 @@ namespace valkyrie_translator {
         lcm_->handleTimeout(0);
         int64_t utime = static_cast<int64_t>(time.toSec() * 1e6);
 
-        publishEstRobotState(utime);
+        publishCoreRobotState(utime);
+
+        if (publish_est_robot_state_)
+            publishEstRobotState(utime);
 
         if (publish_imu_readings_)
             publishIMUReadings(utime);
@@ -211,6 +233,30 @@ namespace valkyrie_translator {
     }
 
     void JointStatePublisher::publishEstRobotState(int64_t utime) {
+        est_robot_state_.utime = utime;
+
+        for (unsigned int i = 0; i < number_of_joint_interfaces_; i++) {
+            est_robot_state_.joint_position[i] = static_cast<float>(joint_state_handles_[i].getPosition());
+            est_robot_state_.joint_velocity[i] = static_cast<float>(joint_state_handles_[i].getVelocity());
+            est_robot_state_.joint_effort[i] = static_cast<float>(joint_state_handles_[i].getEffort());
+        }
+
+        // leftFootSixAxis
+        hardware_interface::ForceTorqueSensorHandle &l_foot_force_torque = force_torque_handles_["leftFootSixAxis"];
+        est_robot_state_.force_torque.l_foot_force_z = static_cast<float>(l_foot_force_torque.getForce()[2]);
+        est_robot_state_.force_torque.l_foot_torque_x = static_cast<float>(l_foot_force_torque.getTorque()[0]);
+        est_robot_state_.force_torque.l_foot_torque_y = static_cast<float>(l_foot_force_torque.getTorque()[1]);
+
+        // rightFootSixAxis
+        hardware_interface::ForceTorqueSensorHandle &r_foot_force_torque = force_torque_handles_["rightFootSixAxis"];
+        est_robot_state_.force_torque.r_foot_force_z = static_cast<float>(r_foot_force_torque.getForce()[2]);
+        est_robot_state_.force_torque.r_foot_torque_x = static_cast<float>(r_foot_force_torque.getTorque()[0]);
+        est_robot_state_.force_torque.r_foot_torque_y = static_cast<float>(r_foot_force_torque.getTorque()[1]);
+
+        lcm_->publish("EST_ROBOT_STATE", &est_robot_state_);
+    }
+
+    void JointStatePublisher::publishCoreRobotState(int64_t utime) {
         core_robot_state_.utime = utime;
 
         for (unsigned int i = 0; i < number_of_joint_interfaces_; i++) {
@@ -218,18 +264,6 @@ namespace valkyrie_translator {
             core_robot_state_.joint_velocity[i] = static_cast<float>(joint_state_handles_[i].getVelocity());
             core_robot_state_.joint_effort[i] = static_cast<float>(joint_state_handles_[i].getEffort());
         }
-
-        // leftFootSixAxis
-        hardware_interface::ForceTorqueSensorHandle &l_foot_force_torque = force_torque_handles_["leftFootSixAxis"];
-        core_robot_state_.force_torque.l_foot_force_z = static_cast<float>(l_foot_force_torque.getForce()[2]);
-        core_robot_state_.force_torque.l_foot_torque_x = static_cast<float>(l_foot_force_torque.getTorque()[0]);
-        core_robot_state_.force_torque.l_foot_torque_y = static_cast<float>(l_foot_force_torque.getTorque()[1]);
-
-        // rightFootSixAxis
-        hardware_interface::ForceTorqueSensorHandle &r_foot_force_torque = force_torque_handles_["rightFootSixAxis"];
-        core_robot_state_.force_torque.r_foot_force_z = static_cast<float>(r_foot_force_torque.getForce()[2]);
-        core_robot_state_.force_torque.r_foot_torque_x = static_cast<float>(r_foot_force_torque.getTorque()[0]);
-        core_robot_state_.force_torque.r_foot_torque_y = static_cast<float>(r_foot_force_torque.getTorque()[1]);
 
         lcm_->publish(core_robot_state_channel_.c_str(), &core_robot_state_);
     }

@@ -58,7 +58,7 @@ namespace valkyrie_translator {
 
         bot_core::joint_state_t core_robot_state_;
         bot_core::robot_state_t est_robot_state_;
-        std::string est_robot_state_channel_;
+        std::string core_robot_state_channel_;
 
         bool publish_imu_readings_;
         bool publish_separate_force_torque_readings_;
@@ -97,9 +97,9 @@ namespace valkyrie_translator {
         }
 
         // Retrieve channel name for the core robot state message (defaults to CORE_ROBOT_STATE)
-        if (!controller_nh.getParam("est_robot_state_channel", est_robot_state_channel_))
-            est_robot_state_channel_ = "CORE_ROBOT_STATE";
-        ROS_INFO_STREAM("Publishing robot state to " << est_robot_state_channel_);
+        if (!controller_nh.getParam("core_robot_state_channel", core_robot_state_channel_))
+            core_robot_state_channel_ = "CORE_ROBOT_STATE";
+        ROS_INFO_STREAM("Publishing core robot state to " << core_robot_state_channel_);
 
         // Initialise core robot state message
         core_robot_state_.utime = 0;
@@ -253,7 +253,7 @@ namespace valkyrie_translator {
         est_robot_state_.force_torque.r_foot_torque_x = static_cast<float>(r_foot_force_torque.getTorque()[0]);
         est_robot_state_.force_torque.r_foot_torque_y = static_cast<float>(r_foot_force_torque.getTorque()[1]);
 
-        lcm_->publish(est_robot_state_channel_.c_str(), &est_robot_state_);
+        lcm_->publish("EST_ROBOT_STATE", &est_robot_state_);
     }
 
     void JointStatePublisher::publishCoreRobotState(int64_t utime) {
@@ -265,7 +265,7 @@ namespace valkyrie_translator {
             core_robot_state_.joint_effort[i] = static_cast<float>(joint_state_handles_[i].getEffort());
         }
 
-        lcm_->publish("EST_ROBOT_STATE", &core_robot_state_);
+        lcm_->publish(core_robot_state_channel_.c_str(), &core_robot_state_);
     }
 
     void JointStatePublisher::publishIMUReadings(int64_t utime) {

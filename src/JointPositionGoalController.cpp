@@ -227,8 +227,12 @@ namespace valkyrie_translator {
                 std::find(joint_names_.begin(), joint_names_.end(), positionNames[i]) == joint_names_.end())
                 continue;
 
-            positionJointHandles_[positionNames[i]] = position_hw->getHandle(positionNames[i]);
-            latest_commands_[positionNames[i]] = 0.0;
+            try {
+                positionJointHandles_[positionNames[i]] = position_hw->getHandle(positionNames[i]);
+                latest_commands_[positionNames[i]] = 0.0;
+            } catch (const hardware_interface::HardwareInterfaceException& e) {
+                ROS_ERROR_STREAM("Could not retrieve handle for " << joint_names_[i] << ": " << e.what());
+            }
         }
         number_of_joint_interfaces_ = positionJointHandles_.size();
         q_move_time_ = 0;

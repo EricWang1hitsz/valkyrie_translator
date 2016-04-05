@@ -2,4 +2,5 @@ JointStatePublisher:
     type: valkyrie_translator/JointStatePublisher
     publish_imu_readings: true
     publish_separate_force_torque_readings: true
-    core_robot_state_channel: "VAL_ROBOT_STATE_WITHOUT_POSE"
+    publish_est_robot_state: false
+    core_robot_state_channel: "VAL_CORE_ROBOT_STATE"

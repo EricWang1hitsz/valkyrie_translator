@@ -86,7 +86,7 @@ namespace valkyrie_translator
             latest_commands[effortNames[i]].ff_f_d = 0.0;
             latest_commands[effortNames[i]].ff_const = 0.0;
           } catch (const hardware_interface::HardwareInterfaceException& e) {
-            ROS_ERROR_STREAM("Could not retrieve handle for " << joint_names_[i] << ": " << e.what());
+            ROS_ERROR_STREAM("Could not retrieve handle for " << effortNames[i] << ": " << e.what());
           }
         }
 
@@ -125,7 +125,7 @@ namespace valkyrie_translator
             latest_commands[positionNames[i]].ff_f_d = 0.0;
             latest_commands[positionNames[i]].ff_const = 0.0;
           } catch (const hardware_interface::HardwareInterfaceException& e) {
-            ROS_ERROR_STREAM("Could not retrieve handle for " << joint_names_[i] << ": " << e.what());
+            ROS_ERROR_STREAM("Could not retrieve handle for " << positionNames[i] << ": " << e.what());
           }
         }
 
@@ -151,7 +151,7 @@ namespace valkyrie_translator
           try {
             imuSensorHandles[imuNames[i]] = imu_hw->getHandle(imuNames[i]);
           } catch (const hardware_interface::HardwareInterfaceException& e) {
-            ROS_ERROR_STREAM("Could not retrieve handle for " << joint_names_[i] << ": " << e.what());
+            ROS_ERROR_STREAM("Could not retrieve handle for " << imuNames[i] << ": " << e.what());
           }
         }
 
@@ -177,7 +177,7 @@ namespace valkyrie_translator
           try {
             forceTorqueHandles[forceTorqueNames[i]] = forceTorque_hw->getHandle(forceTorqueNames[i]);
           } catch (const hardware_interface::HardwareInterfaceException& e) {
-            ROS_ERROR_STREAM("Could not retrieve handle for " << joint_names_[i] << ": " << e.what());
+            ROS_ERROR_STREAM("Could not retrieve handle for " << forceTorqueNames[i] << ": " << e.what());
           }
         }
         auto forceTorque_hw_claims = forceTorque_hw->getClaims();

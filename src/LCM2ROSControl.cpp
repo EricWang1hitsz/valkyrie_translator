@@ -71,19 +71,23 @@ namespace valkyrie_translator
           if (use_joint_selection && std::find(joint_names_.begin(), joint_names_.end(), effortNames[i]) == joint_names_.end())
             continue;
 
-          effortJointHandles[effortNames[i]] = effort_hw->getHandle(effortNames[i]);
-          latest_commands[effortNames[i]] = joint_command();
-          latest_commands[effortNames[i]].position = 0.0;
-          latest_commands[effortNames[i]].velocity = 0.0;
-          latest_commands[effortNames[i]].effort = 0.0;
-          latest_commands[effortNames[i]].k_q_p = 0.0;
-          latest_commands[effortNames[i]].k_q_i = 0.0;
-          latest_commands[effortNames[i]].k_qd_p = 0.0;
-          latest_commands[effortNames[i]].k_f_p = 0.0;
-          latest_commands[effortNames[i]].ff_qd = 0.0;
-          latest_commands[effortNames[i]].ff_qd_d = 0.0;
-          latest_commands[effortNames[i]].ff_f_d = 0.0;
-          latest_commands[effortNames[i]].ff_const = 0.0;
+          try {
+            effortJointHandles[effortNames[i]] = effort_hw->getHandle(effortNames[i]);
+            latest_commands[effortNames[i]] = joint_command();
+            latest_commands[effortNames[i]].position = 0.0;
+            latest_commands[effortNames[i]].velocity = 0.0;
+            latest_commands[effortNames[i]].effort = 0.0;
+            latest_commands[effortNames[i]].k_q_p = 0.0;
+            latest_commands[effortNames[i]].k_q_i = 0.0;
+            latest_commands[effortNames[i]].k_qd_p = 0.0;
+            latest_commands[effortNames[i]].k_f_p = 0.0;
+            latest_commands[effortNames[i]].ff_qd = 0.0;
+            latest_commands[effortNames[i]].ff_qd_d = 0.0;
+            latest_commands[effortNames[i]].ff_f_d = 0.0;
+            latest_commands[effortNames[i]].ff_const = 0.0;
+          } catch (const hardware_interface::HardwareInterfaceException& e) {
+            ROS_ERROR_STREAM("Could not retrieve handle for " << effortNames[i] << ": " << e.what());
+          }
         }
 
         auto effort_hw_claims = effort_hw->getClaims();
@@ -106,19 +110,23 @@ namespace valkyrie_translator
           if (use_joint_selection && std::find(joint_names_.begin(), joint_names_.end(), positionNames[i]) == joint_names_.end())
             continue;
 
-          positionJointHandles[positionNames[i]] = position_hw->getHandle(positionNames[i]);
-          latest_commands[positionNames[i]] = joint_command();
-          latest_commands[positionNames[i]].position = 0.0;
-          latest_commands[positionNames[i]].velocity = 0.0;
-          latest_commands[positionNames[i]].effort = 0.0;
-          latest_commands[positionNames[i]].k_q_p = 0.0;
-          latest_commands[positionNames[i]].k_q_i = 0.0;
-          latest_commands[positionNames[i]].k_qd_p = 0.0;
-          latest_commands[positionNames[i]].k_f_p = 0.0;
-          latest_commands[positionNames[i]].ff_qd = 0.0;
-          latest_commands[positionNames[i]].ff_qd_d = 0.0;
-          latest_commands[positionNames[i]].ff_f_d = 0.0;
-          latest_commands[positionNames[i]].ff_const = 0.0;
+          try {
+            positionJointHandles[positionNames[i]] = position_hw->getHandle(positionNames[i]);
+            latest_commands[positionNames[i]] = joint_command();
+            latest_commands[positionNames[i]].position = 0.0;
+            latest_commands[positionNames[i]].velocity = 0.0;
+            latest_commands[positionNames[i]].effort = 0.0;
+            latest_commands[positionNames[i]].k_q_p = 0.0;
+            latest_commands[positionNames[i]].k_q_i = 0.0;
+            latest_commands[positionNames[i]].k_qd_p = 0.0;
+            latest_commands[positionNames[i]].k_f_p = 0.0;
+            latest_commands[positionNames[i]].ff_qd = 0.0;
+            latest_commands[positionNames[i]].ff_qd_d = 0.0;
+            latest_commands[positionNames[i]].ff_f_d = 0.0;
+            latest_commands[positionNames[i]].ff_const = 0.0;
+          } catch (const hardware_interface::HardwareInterfaceException& e) {
+            ROS_ERROR_STREAM("Could not retrieve handle for " << positionNames[i] << ": " << e.what());
+          }
         }
 
         auto position_hw_claims = position_hw->getClaims();
@@ -140,7 +148,11 @@ namespace valkyrie_translator
           if (use_joint_selection && std::find(joint_names_.begin(), joint_names_.end(), imuNames[i]) == joint_names_.end())
             continue;
 
-          imuSensorHandles[imuNames[i]] = imu_hw->getHandle(imuNames[i]);
+          try {
+            imuSensorHandles[imuNames[i]] = imu_hw->getHandle(imuNames[i]);
+          } catch (const hardware_interface::HardwareInterfaceException& e) {
+            ROS_ERROR_STREAM("Could not retrieve handle for " << imuNames[i] << ": " << e.what());
+          }
         }
 
         auto imu_hw_claims = imu_hw->getClaims();
@@ -162,7 +174,11 @@ namespace valkyrie_translator
           if (use_joint_selection && std::find(joint_names_.begin(), joint_names_.end(), forceTorqueNames[i]) == joint_names_.end())
             continue;
 
-          forceTorqueHandles[forceTorqueNames[i]] = forceTorque_hw->getHandle(forceTorqueNames[i]);
+          try {
+            forceTorqueHandles[forceTorqueNames[i]] = forceTorque_hw->getHandle(forceTorqueNames[i]);
+          } catch (const hardware_interface::HardwareInterfaceException& e) {
+            ROS_ERROR_STREAM("Could not retrieve handle for " << forceTorqueNames[i] << ": " << e.what());
+          }
         }
         auto forceTorque_hw_claims = forceTorque_hw->getClaims();
         claimed_resources.insert(forceTorque_hw_claims.begin(), forceTorque_hw_claims.end());

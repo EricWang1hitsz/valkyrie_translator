@@ -1,0 +1,17 @@
+LCM2ROSControl_UpperBody:
+    type: valkyrie_translator/LCM2ROSControl
+    joints:
+       - rightShoulderPitch
+       - rightShoulderRoll
+       - rightShoulderYaw
+       - rightElbowPitch
+       - rightForearmYaw
+       - rightWristRoll
+       - rightWristPitch
+       - leftShoulderPitch
+       - leftShoulderRoll
+       - leftShoulderYaw
+       - leftElbowPitch
+      # - leftForearmYaw
+      # - leftWristRoll
+      # - leftWristPitch

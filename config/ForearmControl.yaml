@@ -6,7 +6,7 @@ ForearmPositionGoalController:
     control_state_channel: "FOREARM_STATE"
     control_state_publish_frequency: 80
     joints:
-      #- rightForearmYaw # this joint is torque controlled
+      - rightForearmYaw
       - rightWristRoll
       - rightWristPitch
     joint_velocity_limit: 0.262 # rad/s

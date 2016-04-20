@@ -1,0 +1,71 @@
+HandPositionGoalController:
+    type: valkyrie_translator/JointPositionGoalController
+    publish_est_robot_state: false
+    command_channel: "DESIRED_HAND_ANGLES"
+    commands_modulate_on_joint_limits_range: true
+    command_feedback_channel: "HAND_COMMAND_FEEDBACK"
+    control_state_channel: "HAND_STATE"
+    control_state_publish_frequency: 50
+    joints: # Position-commanded joints
+        # - leftIndexFingerMotorPitch1
+        # - leftMiddleFingerMotorPitch1
+        # - leftPinkyMotorPitch1
+        # - leftThumbMotorPitch1
+        # - leftThumbMotorPitch2
+        # - leftThumbMotorRoll
+        - rightIndexFingerMotorPitch1
+        - rightMiddleFingerMotorPitch1
+        - rightPinkyMotorPitch1
+        - rightThumbMotorPitch1
+        - rightThumbMotorPitch2
+        - rightThumbMotorRoll
+    joint_velocity_limit: 0.262 # rad/s
+    joint_limits:
+        leftIndexFingerMotorPitch1:
+            has_position_limits: true
+            min_position: 0.0
+            max_position: 2.0
+        leftMiddleFingerMotorPitch1:
+            has_position_limits: true
+            min_position: 0.0
+            max_position: 2.0
+        leftPinkyMotorPitch1:
+            has_position_limits: true
+            min_position: 0.0
+            max_position: 2.0
+        leftThumbMotorPitch1:
+            has_position_limits: true
+            min_position: 0.0
+            max_position: 2.0
+        leftThumbMotorPitch2:
+            has_position_limits: true
+            min_position: 0.0
+            max_position: 2.0
+        leftThumbMotorRoll:
+            has_position_limits: true
+            min_position: 0.0
+            max_position: 1.7
+        rightIndexFingerMotorPitch1:
+            has_position_limits: true
+            min_position: 0.0
+            max_position: 2.8
+        rightMiddleFingerMotorPitch1:
+            has_position_limits: true
+            min_position: 0.0
+            max_position: 3.0
+        rightPinkyMotorPitch1:
+            has_position_limits: true
+            min_position: 0.0
+            max_position: 2.5
+        rightThumbMotorPitch1:
+            has_position_limits: true
+            min_position: 0.0
+            max_position: 1.6
+        rightThumbMotorPitch2:
+            has_position_limits: true
+            min_position: 0.0
+            max_position: 1.5 # depends on setting of rightThumbMotorPitch1
+        rightThumbMotorRoll:
+            has_position_limits: true
+            min_position: 0.0
+            max_position: 1.7

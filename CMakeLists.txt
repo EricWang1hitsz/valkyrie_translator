@@ -32,8 +32,8 @@ include_directories(
 
 ######################################################
 add_library(LCM2ROSControl src/LCM2ROSControl.cpp)
-target_link_libraries(LCM2ROSControl ${catkin_LIBRARIES} )
-pods_use_pkg_config_packages(LCM2ROSControl lcm lcmtypes_bot2-core)
+target_link_libraries(LCM2ROSControl ${catkin_LIBRARIES} drakeYAMLUtil)
+pods_use_pkg_config_packages(LCM2ROSControl lcm lcmtypes_bot2-core drake-control-util eigen3)
 
 add_library(JointPositionGoalController src/JointPositionGoalController.cpp)
 target_link_libraries(JointPositionGoalController ${catkin_LIBRARIES})

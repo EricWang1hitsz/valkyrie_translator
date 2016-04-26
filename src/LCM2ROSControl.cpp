@@ -416,6 +416,12 @@ namespace valkyrie_translator
       
    }
 
+   void LCM2ROSControl::loadParams(){
+      std::string robotURDFRelativeToDrake = "../../models/val_description/urdf/valkyrie_sim_drake.urdf";
+      YAML::Node config = YAML::LoadFile("../config/freeze_config_hardware.yaml");
+      params = loadAllParamSets(config, robotURDFRelativeToDrake);
+   }
+
    void LCM2ROSControl::stopping(const ros::Time& time)
    {}
 

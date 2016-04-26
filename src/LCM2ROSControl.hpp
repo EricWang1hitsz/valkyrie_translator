@@ -19,6 +19,12 @@
 #include "lcmtypes/bot_core/atlas_command_t.hpp"
 #include "lcmtypes/drc/behavior_command_t.hpp"
 
+
+// needed for parsing the YAML config file
+#include "drake/util/yaml/yamlUtil.h"
+#include "drake/systems/controllers/controlUtil.h"
+
+
 #include <set>
 #include <string>
 #include <vector>
@@ -77,14 +83,11 @@ namespace valkyrie_translator
         // Public so it can be modified by the LCMHandler. Should eventually create
         // a friend class arrangement to make this private again.
         std::map<std::string, joint_command> latest_commands;
-<<<<<<< HEAD
         bool freeze = false;
 
-=======
         bool publishCoreRobotState = true;
         bool publish_EST_ROBOT_STATE = false;
         bool applyEffortCommands = false;
->>>>>>> 370ac81... add options to publish lcm messages, but not command torques to robot
 
    protected:
         virtual bool initRequest(hardware_interface::RobotHW* robot_hw,
@@ -103,6 +106,9 @@ namespace valkyrie_translator
         std::map<std::string, double> freezePosition;
         
         ros::Time last_update;
+        std::map<std::string, QPControllerParams> params;
+
+        void loadParams();
    };
 }
 #endif

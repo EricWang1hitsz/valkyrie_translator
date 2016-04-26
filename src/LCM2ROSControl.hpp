@@ -17,6 +17,7 @@
 #include "lcmtypes/bot_core/ins_t.hpp"
 #include "lcmtypes/bot_core/joint_angles_t.hpp"
 #include "lcmtypes/bot_core/atlas_command_t.hpp"
+#include "lcmtypes/drc/behavior_command_t.hpp"
 
 #include <set>
 #include <string>
@@ -51,6 +52,10 @@ namespace valkyrie_translator
         virtual ~LCM2ROSControl_LCMHandler();
         void jointCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
                                const bot_core::atlas_command_t* msg);
+
+        void freezeCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
+                      const drc::behavior_command_t* msg);
+
         void update();
    private:
         LCM2ROSControl& parent_;
@@ -72,6 +77,8 @@ namespace valkyrie_translator
         // Public so it can be modified by the LCMHandler. Should eventually create
         // a friend class arrangement to make this private again.
         std::map<std::string, joint_command> latest_commands;
+        bool freeze = false;
+
 
    protected:
         virtual bool initRequest(hardware_interface::RobotHW* robot_hw,
@@ -86,7 +93,9 @@ namespace valkyrie_translator
         std::map<std::string, hardware_interface::JointHandle> positionJointHandles;
         std::map<std::string, hardware_interface::ImuSensorHandle> imuSensorHandles;
         std::map<std::string, hardware_interface::ForceTorqueSensorHandle> forceTorqueHandles;
-
+        
+        std::map<std::string, double> freezePosition;
+        
         ros::Time last_update;
    };
 }

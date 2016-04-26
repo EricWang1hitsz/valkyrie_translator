@@ -250,6 +250,7 @@ namespace valkyrie_translator
 
       // Iterate over all effort-controlled joints
       size_t effortJointIndex = 0;
+      bool freezePositionIsEmpty= freezePosition.size() == 0;
       for(auto iter = effortJointHandles.begin(); iter != effortJointHandles.end(); iter++)
       {
           // see drc_joint_command_t.lcm for explanation of gains and
@@ -257,6 +258,12 @@ namespace valkyrie_translator
           double q = iter->second.getPosition();
           double qd = iter->second.getVelocity();
           double f = iter->second.getEffort();
+
+          // record the state if we need to freeze
+          // don't overwrite it if we had already recorded it
+          if(freeze && freezePositionIsEmpty){
+            freezePosition[iter->first] = q;
+          }
 
           joint_command& command = latest_commands[iter->first];
           double command_effort =
@@ -428,6 +435,18 @@ namespace valkyrie_translator
         }
       }
    }
+
+   void LCM2ROSControl_LCMHandler::freezeCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::behavior_command_t* msg){
+
+    // if the command wasn't freeze then just return. Otherwise set the LCM2ROSControl freeze flag
+    if(msg->command != "freeze"){
+      return;
+    }
+
+    parent_.freeze = true;
+
+   }
+
    void LCM2ROSControl_LCMHandler::update(){
       lcm_->handleTimeout(0);
    }

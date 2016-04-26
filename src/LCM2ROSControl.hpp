@@ -77,8 +77,14 @@ namespace valkyrie_translator
         // Public so it can be modified by the LCMHandler. Should eventually create
         // a friend class arrangement to make this private again.
         std::map<std::string, joint_command> latest_commands;
+<<<<<<< HEAD
         bool freeze = false;
 
+=======
+        bool publishCoreRobotState = true;
+        bool publish_EST_ROBOT_STATE = false;
+        bool applyEffortCommands = false;
+>>>>>>> 370ac81... add options to publish lcm messages, but not command torques to robot
 
    protected:
         virtual bool initRequest(hardware_interface::RobotHW* robot_hw,

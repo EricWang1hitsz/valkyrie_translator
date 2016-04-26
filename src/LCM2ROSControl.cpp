@@ -276,12 +276,18 @@ namespace valkyrie_translator
             command.ff_f_d * ( command.effort ) +
             command.ff_const;
 
+
+          // only apply this command to the robot if this flag is set to true
+          if(applyEffortCommands){
+
           if (fabs(command_effort) < 1000.){
-            iter->second.setCommand(command_effort);
-          } else{
-            ROS_INFO("Dangerous latest_commands[%s]: %f\n", iter->first.c_str(), command_effort);
-            iter->second.setCommand(0.0);
+              iter->second.setCommand(command_effort);
+            } else{
+              ROS_INFO("Dangerous latest_commands[%s]: %f\n", iter->first.c_str(), command_effort);
+              iter->second.setCommand(0.0);
+            }
           }
+
 
           lcm_pose_msg.joint_name[effortJointIndex] = iter->first;
           lcm_pose_msg.joint_position[effortJointIndex] = q;
@@ -340,10 +346,16 @@ namespace valkyrie_translator
           positionJointIndex++;
       }
 
-      lcm_->publish("VAL_CORE_ROBOT_STATE", &lcm_pose_msg);
-      lcm_->publish("VAL_COMMAND_FEEDBACK", &lcm_commanded_msg);
-      lcm_->publish("VAL_COMMAND_FEEDBACK_TORQUE", &lcm_torque_msg);
-      lcm_->publish("EST_ROBOT_STATE", &lcm_state_msg);
+      if(publishCoreRobotState){
+        lcm_->publish("VAL_CORE_ROBOT_STATE", &lcm_pose_msg);
+        lcm_->publish("VAL_COMMAND_FEEDBACK", &lcm_commanded_msg);
+        lcm_->publish("VAL_COMMAND_FEEDBACK_TORQUE", &lcm_torque_msg);
+      }
+
+      if(publish_EST_ROBOT_STATE){
+        lcm_->publish("EST_ROBOT_STATE", &lcm_state_msg);
+      }      
+      
 
       // push out the measurements for all imus we see advertised
       for (auto iter = imuSensorHandles.begin(); iter != imuSensorHandles.end(); iter ++){
@@ -372,7 +384,10 @@ namespace valkyrie_translator
         lcm_imu_msg.pressure = 0.0;
         lcm_imu_msg.rel_alt = 0.0;
 
-        lcm_->publish(imuchannel.str(), &lcm_imu_msg);
+        if(publishCoreRobotState){
+          lcm_->publish(imuchannel.str(), &lcm_imu_msg);
+        }
+        
       }
 
       // push out the measurements for all ft's we see advertised
@@ -394,7 +409,11 @@ namespace valkyrie_translator
         lcm_ft_array_msg.names[i] = iter->first;
         i++;
       }
-      lcm_->publish("VAL_FORCE_TORQUE", &lcm_ft_array_msg);
+
+      if(publishCoreRobotState){
+        lcm_->publish("VAL_FORCE_TORQUE", &lcm_ft_array_msg);  
+      }
+      
    }
 
    void LCM2ROSControl::stopping(const ros::Time& time)

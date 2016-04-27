@@ -17,6 +17,10 @@ wolfgang.merkt@ed.ac.uk, 201603**
 
 #include "LCM2ROSControl.hpp"
 
+inline double clamp(double x, double lower, double upper) {
+  return std::max(lower, std::min(upper, x));
+}
+
 namespace valkyrie_translator
 {
  LCM2ROSControl::LCM2ROSControl()
@@ -33,6 +37,19 @@ namespace valkyrie_translator
   if (state_ != CONSTRUCTED){
     ROS_ERROR("Cannot initialize this controller because it failed to be constructed");
     return false;
+  }
+
+  if (!controller_nh.getParam("publish_core_robot_state", publishCoreRobotState)) {
+    ROS_WARN("Could not read desired setting for publishing CORE_ROBOT_STATE, defaulting to true");
+    publishCoreRobotState = true;
+  }
+  if (!controller_nh.getParam("publish_est_robot_state", publish_est_robot_state)) {
+    ROS_WARN("Could not read desired setting for publishing EST_ROBOT_STATE, defaulting to false");
+    publish_est_robot_state = false;
+  }
+  if (!controller_nh.getParam("apply_commands", applyCommands)) {
+    ROS_WARN("Could not read desired setting for applying actual commands to the robot, defaulting to false");
+    applyCommands = false;
   }
 
         // setup LCM (todo: move to constructor? how to propagate an error then?)
@@ -55,6 +72,18 @@ namespace valkyrie_translator
   if (n_joints_ == 0)
     use_joint_selection = false;
 
+        // get joint limits
+  for (auto const &joint_name : joint_names_) {
+    joint_limits_interface::JointLimits limits;
+    if (!getJointLimits(joint_name, controller_nh, limits)){
+      ROS_INFO_STREAM("Cannot read joint limits for joint " << joint_name << " from param server");
+    } else {
+      joint_limits.insert(std::make_pair(joint_name, limits));
+      ROS_INFO_STREAM("Joint Position Limits: " << joint_name << "position [" << limits.min_position << 
+        "," << limits.max_position << "], effort [" << -limits.max_effort << "," << limits.max_effort << "]");
+    }
+  }
+
         // get a pointer to the effort interface
   hardware_interface::EffortJointInterface* effort_hw = robot_hw->get<hardware_interface::EffortJointInterface>();
   if (!effort_hw)
@@ -66,6 +95,7 @@ namespace valkyrie_translator
   effort_hw->clearClaims();
   const std::vector<std::string>& effortNames = effort_hw->getNames();
         // initialize command buffer for each joint we found on the HW
+
   for (unsigned int i=0; i<effortNames.size(); i++)
   {
     if (use_joint_selection && std::find(joint_names_.begin(), joint_names_.end(), effortNames[i]) == joint_names_.end())
@@ -162,7 +192,7 @@ namespace valkyrie_translator
   hardware_interface::ForceTorqueSensorInterface* forceTorque_hw = robot_hw->get<hardware_interface::ForceTorqueSensorInterface>();
   if (!forceTorque_hw)
   {
-    ROS_ERROR("This controller requires a hardware interface of type hardware_interface::EffortJointInterface.");
+    ROS_ERROR("This controller requires a hardware interface of type hardware_interface::ForceTorqueSensorInterface.");
     return false;
   }
 
@@ -286,21 +316,53 @@ void LCM2ROSControl::update(const ros::Time& time, const ros::Duration& period)
     command.ff_const;
 
 
-          // only apply this command to the robot if this flag is set to true
-    if(applyEffortCommands){
-
-      if (fabs(command_effort) < 1000.){
-        iter->second.setCommand(command_effort);
-      } else{
-        ROS_INFO("Dangerous latest_commands[%s]: %f\n", iter->first.c_str(), command_effort);
-        iter->second.setCommand(0.0);
-      }
+    auto limits_search = joint_limits.find(iter->first);
+    joint_limits_interface::JointLimits limits;
+    if (limits_search == joint_limits.end()){
+            // defaults
+      limits.min_position = -DEFAULT_MIN_POSITION;
+      limits.max_position = DEFAULT_MIN_POSITION;
+      limits.max_effort = DEFAULT_MAX_EFFORT;
     }
 
+          // bound the force within our max force limits
+    command_effort = clamp(command_effort, -limits.max_effort, limits.max_effort);
 
-    lcm_pose_msg.joint_name[effortJointIndex] = iter->first;
-    lcm_pose_msg.joint_position[effortJointIndex] = q;
-    lcm_pose_msg.joint_velocity[effortJointIndex] = qd;
+           // and ramp down the force to 0 in the 0.1 radians after the joint limit
+    double err_beyond_bound = fmax(q - limits.max_position, limits.min_position - q);
+    if (err_beyond_bound >= FORCE_CONTROL_ALLOWABLE_POSITION_ERR_BOUND){
+      ROS_INFO("Dangerous command modified: joint %s force %f nulled due to joint out of range %f\n", iter->first.c_str(), command_effort, q);
+      command_effort = 0.0;
+    }
+    else if (err_beyond_bound >= 0){              
+      ROS_INFO("Dangerous command modified: joint %s force %f scaled due to joint out of range %f\n", iter->first.c_str(), command_effort, q);
+            command_effort *= (FORCE_CONTROL_ALLOWABLE_POSITION_ERR_BOUND - err_beyond_bound) / FORCE_CONTROL_ALLOWABLE_POSITION_ERR_BOUND; // start at no scaling, scale down to 0 at ERR_BOUND
+          }
+
+          // finally, bound to force to be within epsilon of the currently applied force
+          if (fabs(command_effort - f) >= FORCE_CONTROL_MAX_CHANGE)
+            ROS_INFO("Dangerous command modified: joint %s force %f out of range of current force %f\n", iter->first.c_str(), command_effort, f);
+
+          if (command_effort > f)
+            command_effort = fmin(f + FORCE_CONTROL_MAX_CHANGE, command_effort);
+          else
+            command_effort = fmax(f - FORCE_CONTROL_MAX_CHANGE, command_effort);
+
+          // only apply this command to the robot if this flag is set to true
+          if(applyCommands){
+            // apply those forces
+            if (fabs(command_effort) < 1000.){
+              iter->second.setCommand(command_effort);
+            } else {
+              ROS_INFO("Dangerous latest_commands for joint %s: somehow commanding %f\n", iter->first.c_str(), command_effort);
+              iter->second.setCommand(0.0);
+            }
+          }
+
+
+          lcm_pose_msg.joint_name[effortJointIndex] = iter->first;
+          lcm_pose_msg.joint_position[effortJointIndex] = q;
+          lcm_pose_msg.joint_velocity[effortJointIndex] = qd;
           lcm_pose_msg.joint_effort[effortJointIndex] = iter->second.getEffort(); // measured!
 
           lcm_state_msg.joint_name[effortJointIndex] = iter->first;
@@ -329,65 +391,73 @@ void LCM2ROSControl::update(const ros::Time& time, const ros::Duration& period)
           joint_command& command = latest_commands[iter->first];
           double position_to_go = command.position;
 
-          if(applyEffortCommands){
-
-          // TODO: check that desired q is within limits
-          if (fabs(position_to_go) < M_PI) { // TODO: check joint limit!
-            iter->second.setCommand(position_to_go);
-          } else{
-            ROS_INFO("Dangerous latest_commands[%s]: %f\n", iter->first.c_str(), position_to_go);
-            // iter->second.setCommand(0.0); // Don't do anything!
+          // clamp to joint limits
+          auto limits_search = joint_limits.find(iter->first);
+          joint_limits_interface::JointLimits limits;
+          if (limits_search == joint_limits.end()){
+            // defaults
+            limits.min_position = -DEFAULT_MIN_POSITION;
+            limits.max_position = DEFAULT_MIN_POSITION;
+            limits.max_effort = DEFAULT_MAX_EFFORT;
           }
-        }
+          if (position_to_go > limits.max_position || position_to_go < limits.min_position)
+            ROS_INFO("Dangerous command modified: joint %s position %f out of joint limits\n", iter->first.c_str(), position_to_go);
+
+          position_to_go = clamp(position_to_go, limits.min_position, limits.max_position);
+
+          if (applyCommands){
+            iter->second.setCommand(position_to_go);
+          }
+
           // TODO: we can't directly iterate like this, better match differently!!
 
-        lcm_pose_msg.joint_name[positionJointIndex] = iter->first;
-        lcm_pose_msg.joint_position[positionJointIndex] = q;
-        lcm_pose_msg.joint_velocity[positionJointIndex] = qd;
+          lcm_pose_msg.joint_name[positionJointIndex] = iter->first;
+          lcm_pose_msg.joint_position[positionJointIndex] = q;
+          lcm_pose_msg.joint_velocity[positionJointIndex] = qd;
 
-        lcm_state_msg.joint_name[positionJointIndex] = iter->first;
-        lcm_state_msg.joint_position[positionJointIndex] = q;
-        lcm_state_msg.joint_velocity[positionJointIndex] = qd;
+          lcm_state_msg.joint_name[positionJointIndex] = iter->first;
+          lcm_state_msg.joint_position[positionJointIndex] = q;
+          lcm_state_msg.joint_velocity[positionJointIndex] = qd;
 
           // republish to guarantee sync
-        lcm_commanded_msg.joint_name[positionJointIndex] = iter->first;
-        lcm_commanded_msg.joint_position[positionJointIndex] = command.position;
-        lcm_commanded_msg.joint_velocity[positionJointIndex] = command.velocity;
-        lcm_commanded_msg.joint_effort[positionJointIndex] = command.effort;
+          lcm_commanded_msg.joint_name[positionJointIndex] = iter->first;
+          lcm_commanded_msg.joint_position[positionJointIndex] = command.position;
+          lcm_commanded_msg.joint_velocity[positionJointIndex] = command.velocity;
+          lcm_commanded_msg.joint_effort[positionJointIndex] = command.effort;
 
-        positionJointIndex++;
-      }
+          positionJointIndex++;
+        }
 
-      if(publishCoreRobotState){
-        lcm_->publish("VAL_CORE_ROBOT_STATE", &lcm_pose_msg);
-        lcm_->publish("VAL_COMMAND_FEEDBACK", &lcm_commanded_msg);
-        lcm_->publish("VAL_COMMAND_FEEDBACK_TORQUE", &lcm_torque_msg);
-      }
+        if(publishCoreRobotState){
+          lcm_->publish("VAL_CORE_ROBOT_STATE", &lcm_pose_msg);
+          lcm_->publish("VAL_COMMAND_FEEDBACK", &lcm_commanded_msg);
+          lcm_->publish("VAL_COMMAND_FEEDBACK_TORQUE", &lcm_torque_msg);
+        }
 
-      if(publish_EST_ROBOT_STATE){
-        lcm_->publish("EST_ROBOT_STATE", &lcm_state_msg);
-      }      
-      
+        if(publish_est_robot_state){
+          lcm_->publish("EST_ROBOT_STATE", &lcm_state_msg);
+        }      
+        
 
       // push out the measurements for all imus we see advertised
-      for (auto iter = imuSensorHandles.begin(); iter != imuSensorHandles.end(); iter ++){
-        bot_core::ins_t lcm_imu_msg;
-        std::ostringstream imuchannel;
-        imuchannel << "VAL_IMU_" << iter->first;
-        lcm_imu_msg.utime = utime;
+        for (auto iter = imuSensorHandles.begin(); iter != imuSensorHandles.end(); iter ++){
+          bot_core::ins_t lcm_imu_msg;
+          std::ostringstream imuchannel;
+          imuchannel << "VAL_IMU_" << iter->first;
+          lcm_imu_msg.utime = utime;
 
-        lcm_imu_msg.quat[0]= iter->second.getOrientation()[0];
-        lcm_imu_msg.quat[1]= iter->second.getOrientation()[1];
-        lcm_imu_msg.quat[2]= iter->second.getOrientation()[2];
-        lcm_imu_msg.quat[3]= iter->second.getOrientation()[3];
+          lcm_imu_msg.quat[0]= iter->second.getOrientation()[0];
+          lcm_imu_msg.quat[1]= iter->second.getOrientation()[1];
+          lcm_imu_msg.quat[2]= iter->second.getOrientation()[2];
+          lcm_imu_msg.quat[3]= iter->second.getOrientation()[3];
 
-        lcm_imu_msg.gyro[0] = iter->second.getAngularVelocity()[0];
-        lcm_imu_msg.gyro[1] = iter->second.getAngularVelocity()[1];
-        lcm_imu_msg.gyro[2] = iter->second.getAngularVelocity()[2];
+          lcm_imu_msg.gyro[0] = iter->second.getAngularVelocity()[0];
+          lcm_imu_msg.gyro[1] = iter->second.getAngularVelocity()[1];
+          lcm_imu_msg.gyro[2] = iter->second.getAngularVelocity()[2];
 
-        lcm_imu_msg.accel[0] = iter->second.getLinearAcceleration()[0];
-        lcm_imu_msg.accel[1] = iter->second.getLinearAcceleration()[1];
-        lcm_imu_msg.accel[2] = iter->second.getLinearAcceleration()[2];
+          lcm_imu_msg.accel[0] = iter->second.getLinearAcceleration()[0];
+          lcm_imu_msg.accel[1] = iter->second.getLinearAcceleration()[1];
+          lcm_imu_msg.accel[2] = iter->second.getLinearAcceleration()[2];
 
         lcm_imu_msg.mag[0] = 0.0; // TODO: to be revisited after IMU upgrade
         lcm_imu_msg.mag[1] = 0.0;

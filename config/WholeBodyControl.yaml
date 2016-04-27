@@ -1,0 +1,45 @@
+LCM2ROSControl:
+    type: valkyrie_translator/LCM2ROSControl
+    publish_core_robot_state:  true
+    publish_est_robot_state: false
+    apply_commands: false    
+
+    joints:
+      - torsoYaw
+      - torsoPitch
+      - torsoRoll
+      - lowerNeckPitch
+      - leftHipYaw
+      - leftHipRoll
+      - leftHipPitch
+      - leftKneePitch
+      - leftAnklePitch
+      - leftAnkleRoll
+      - rightHipYaw
+      - rightHipRoll
+      - rightHipPitch
+      - rightKneePitch
+      - rightAnklePitch
+      - rightAnkleRoll
+      - leftShoulderPitch
+      - leftShoulderRoll
+      - leftShoulderYaw
+      - leftElbowPitch
+      - leftForearm
+      - leftWristRoll
+      - leftWristPitch
+      - rightShoulderPitch
+      - rightShoulderRoll
+      - rightShoulderYaw
+      - rightElbowPitch
+      - rightForearm
+      - rightWristRoll
+      - rightWristPitch
+
+    joint_limits:
+      torsoYaw:
+        has_position_limits: true
+        min_position: -1.0
+        max_position: 1.0
+        has_effort_limits: true
+        max_effort: 100.0

@@ -250,7 +250,7 @@ namespace valkyrie_translator
 
       // Iterate over all effort-controlled joints
       size_t effortJointIndex = 0;
-      bool freezePositionIsEmpty= freezePosition.size() == 0;
+      bool freezePositionIsEmpty = (freezePosition.size() == 0);
       for(auto iter = effortJointHandles.begin(); iter != effortJointHandles.end(); iter++)
       {
           // see drc_joint_command_t.lcm for explanation of gains and
@@ -277,6 +277,29 @@ namespace valkyrie_translator
             command.ff_const;
 
 
+          // if we are in freeze mode, then apply the freeze commands
+          if(freeze){
+            QPControllerParams& freezeParams = params.find("standing")->second;
+            int paramJointIdx = positionNameToIndex[iter->first];
+            std::string jointName = iter->first;
+            // desired joint acceleration coming from our PD law
+            double Kp = freezeParams.whole_body.Kp[paramJointIdx];
+            double Kd = freezeParams.whole_body.Kd[paramJointIdx];
+
+
+            // desired joint acceleration coming from the PD law
+            double qdd_des = Kp*(freezePosition[jointName] - q) + Kd*(0-qd);
+
+            // transform this into joint effort using the hardware params
+            command_effort = freezeParams.hardware.gains.ff_f_d[paramJointIdx]*qdd_des;
+
+            // set the command_position and command_velocity
+            command.position = freezePosition[jointName];
+            command.velocity = 0;
+
+          }
+
+
           // only apply this command to the robot if this flag is set to true
           if(applyEffortCommands){
 
@@ -300,11 +323,14 @@ namespace valkyrie_translator
           lcm_state_msg.joint_effort[effortJointIndex] = iter->second.getEffort(); // measured!
 
           // republish to guarantee sync
+          // desired position, velocity, torque passed into this process
           lcm_commanded_msg.joint_name[effortJointIndex] = iter->first;
           lcm_commanded_msg.joint_position[effortJointIndex] = command.position;
           lcm_commanded_msg.joint_velocity[effortJointIndex] = command.velocity;
           lcm_commanded_msg.joint_effort[effortJointIndex] = command.effort;
 
+          
+          // actual commanded torque
           lcm_torque_msg.joint_name[effortJointIndex] = iter->first;
           lcm_torque_msg.joint_position[effortJointIndex] = command_effort;
 
@@ -319,6 +345,16 @@ namespace valkyrie_translator
 
           joint_command& command = latest_commands[iter->first];
           double position_to_go = command.position;
+
+          if(freeze && freezePositionIsEmpty){
+            freezePosition[iter->first] = q;
+          }
+
+          if(freeze){
+            position_to_go = freezePosition[iter->first];
+            command.position = position_to_go;
+            command.velocity = 0;
+          }
 
           // TODO: check that desired q is within limits
           if (fabs(position_to_go) < M_PI) { // TODO: check joint limit!
@@ -419,7 +455,9 @@ namespace valkyrie_translator
    void LCM2ROSControl::loadParams(){
       std::string robotURDFRelativeToDrake = "../../models/val_description/urdf/valkyrie_sim_drake.urdf";
       YAML::Node config = YAML::LoadFile("../config/freeze_config_hardware.yaml");
-      params = loadAllParamSets(config, robotURDFRelativeToDrake);
+      auto returnPair = loadAllParamSets(config, robotURDFRelativeToDrake);
+      positionNameToIndex = returnPair.first;
+      params = returnPair.second;
    }
 
    void LCM2ROSControl::stopping(const ros::Time& time)

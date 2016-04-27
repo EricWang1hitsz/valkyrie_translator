@@ -1,6 +1,9 @@
 #ifndef LCM2ROSCONTROL_HPP
 #define LCM2ROSCONTROL_HPP
 
+#include <utility>
+
+
 #include <hardware_interface/joint_command_interface.h>
 #include <hardware_interface/imu_sensor_interface.h>
 #include <hardware_interface/force_torque_sensor_interface.h>
@@ -28,6 +31,7 @@
 #include <set>
 #include <string>
 #include <vector>
+
 
 namespace valkyrie_translator
 {
@@ -107,6 +111,7 @@ namespace valkyrie_translator
         
         ros::Time last_update;
         std::map<std::string, QPControllerParams> params;
+        std::map<std::string, int> positionNameToIndex; 
 
         void loadParams();
    };

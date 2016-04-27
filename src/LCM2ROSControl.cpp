@@ -449,6 +449,16 @@ namespace valkyrie_translator
       if(publishCoreRobotState){
         lcm_->publish("VAL_FORCE_TORQUE", &lcm_ft_array_msg);  
       }
+
+
+      // publish LCM2ROSControlStatus
+      drc::behavior_command_t driverStateMsg;
+      driverStateMsg.utime = utime;
+      if (freeze){
+        driverStateMsg.command = "freeze";
+      } else{
+        driverStateMsg.command = "normal";
+      }
       
    }
 
@@ -502,11 +512,16 @@ namespace valkyrie_translator
    void LCM2ROSControl_LCMHandler::freezeCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::behavior_command_t* msg){
 
     // if the command wasn't freeze then just return. Otherwise set the LCM2ROSControl freeze flag
-    if(msg->command != "freeze"){
-      return;
+    if(msg->command == "freeze"){
+      parent_.freeze = true;
     }
 
-    parent_.freeze = true;
+    if(msg->command == "unfreeze"){
+      parent_.freeze = false;
+      parent_.freezePosition.clear();
+    }
+
+    
 
    }
 

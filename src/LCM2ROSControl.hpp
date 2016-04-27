@@ -88,6 +88,7 @@ namespace valkyrie_translator
         // a friend class arrangement to make this private again.
         std::map<std::string, joint_command> latest_commands;
         bool freeze = false;
+        std::map<std::string, double> freezePosition;
 
         bool publishCoreRobotState = true;
         bool publish_EST_ROBOT_STATE = false;
@@ -107,7 +108,7 @@ namespace valkyrie_translator
         std::map<std::string, hardware_interface::ImuSensorHandle> imuSensorHandles;
         std::map<std::string, hardware_interface::ForceTorqueSensorHandle> forceTorqueHandles;
         
-        std::map<std::string, double> freezePosition;
+        
         
         ros::Time last_update;
         std::map<std::string, QPControllerParams> params;

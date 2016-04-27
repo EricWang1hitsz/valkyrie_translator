@@ -73,8 +73,8 @@ namespace valkyrie_translator
         // a friend class arrangement to make this private again.
         std::map<std::string, joint_command> latest_commands;
         bool publishCoreRobotState = true;
-        bool publish_EST_ROBOT_STATE = false;
-        bool applyEffortCommands = false;
+        bool publish_EST_ROBOT_STATE = true;
+        bool applyEffortCommands = true;
 
    protected:
         virtual bool initRequest(hardware_interface::RobotHW* robot_hw,

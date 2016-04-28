@@ -320,9 +320,11 @@ void LCM2ROSControl::update(const ros::Time& time, const ros::Duration& period)
     joint_limits_interface::JointLimits limits;
     if (limits_search == joint_limits.end()){
             // defaults
-      limits.min_position = -DEFAULT_MIN_POSITION;
-      limits.max_position = DEFAULT_MIN_POSITION;
+      limits.min_position = DEFAULT_MIN_POSITION;
+      limits.max_position = DEFAULT_MAX_POSITION;
       limits.max_effort = DEFAULT_MAX_EFFORT;
+    } else {
+      limits = limits_search->second;
     }
 
           // bound the force within our max force limits
@@ -335,7 +337,7 @@ void LCM2ROSControl::update(const ros::Time& time, const ros::Duration& period)
       command_effort = 0.0;
     }
     else if (err_beyond_bound >= 0){              
-      ROS_INFO("Dangerous command modified: joint %s force %f scaled due to joint out of range %f\n", iter->first.c_str(), command_effort, q);
+     ROS_INFO("Dangerous command modified: joint %s force %f scaled due to joint out of range %f\n", iter->first.c_str(), command_effort, q);
             command_effort *= (FORCE_CONTROL_ALLOWABLE_POSITION_ERR_BOUND - err_beyond_bound) / FORCE_CONTROL_ALLOWABLE_POSITION_ERR_BOUND; // start at no scaling, scale down to 0 at ERR_BOUND
           }
 
@@ -396,8 +398,8 @@ void LCM2ROSControl::update(const ros::Time& time, const ros::Duration& period)
           joint_limits_interface::JointLimits limits;
           if (limits_search == joint_limits.end()){
             // defaults
-            limits.min_position = -DEFAULT_MIN_POSITION;
-            limits.max_position = DEFAULT_MIN_POSITION;
+            limits.min_position = DEFAULT_MIN_POSITION;
+            limits.max_position = DEFAULT_MAX_POSITION;
             limits.max_effort = DEFAULT_MAX_EFFORT;
           }
           if (position_to_go > limits.max_position || position_to_go < limits.min_position)

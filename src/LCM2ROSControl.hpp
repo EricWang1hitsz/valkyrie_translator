@@ -79,7 +79,7 @@ namespace valkyrie_translator
         bool applyCommands = false;
 
         double FORCE_CONTROL_ALLOWABLE_POSITION_ERR_BOUND = 0.1;
-        double FORCE_CONTROL_MAX_CHANGE = 1.0;
+        double FORCE_CONTROL_MAX_CHANGE = 100.0;
         double DEFAULT_MIN_POSITION = -M_PI;
         double DEFAULT_MAX_POSITION = M_PI;
         double DEFAULT_MAX_EFFORT = 1000.0;

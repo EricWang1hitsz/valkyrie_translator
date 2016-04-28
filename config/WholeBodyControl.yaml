@@ -2,7 +2,7 @@ LCM2ROSControl:
     type: valkyrie_translator/LCM2ROSControl
     publish_core_robot_state:  true
     publish_est_robot_state: false
-    apply_commands: false    
+    apply_commands: false
 
     joints:
       - torsoYaw
@@ -43,3 +43,11 @@ LCM2ROSControl:
         max_position: 1.0
         has_effort_limits: true
         max_effort: 100.0
+
+      leftShoulderRoll:
+        has_position_limits: true
+        min_position: -1.51
+        max_position: 1.5
+        has_effort_limits: true
+        max_effort: 100.0
+         

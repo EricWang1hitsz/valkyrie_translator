@@ -100,7 +100,6 @@ namespace valkyrie_translator {
         std::map<std::string, double> q_delta_;
         std::map<std::string, double> q_start_;
         std::map<std::string, double> q_last_commanded_;
-        std::map<std::string, double> q_joint_limits_range_;
 
         double q_move_time_;
         std::map<std::string, double> latest_commands_;
@@ -206,9 +205,6 @@ namespace valkyrie_translator {
             ROS_INFO_STREAM("Joint Position Limits: " << joint_name << " has lower limit " << limits.min_position <<
                             " and upper limit " <<
                             limits.max_position);
-
-            if (commands_modulate_on_joint_limits_range_)
-                q_joint_limits_range_[joint_name] = std::abs(limits.min_position) + std::abs(limits.max_position);
         }
 
         // get a pointer to the position interface
@@ -359,8 +355,11 @@ namespace valkyrie_translator {
         for (auto const &joint_name : joint_names_) {
             lcm_pose_msg.joint_name[positionJointIndex] = joint_name;
 
-            if (commands_modulate_on_joint_limits_range_)
-                lcm_pose_msg.joint_position[positionJointIndex] = static_cast<float>(clamp(q_measured_[joint_name] / q_joint_limits_range_[joint_name], 0.0, 1.0));
+            if (commands_modulate_on_joint_limits_range_){            
+                joint_limits_interface::JointLimits &limits = joint_limits_[joint_name];
+                lcm_pose_msg.joint_position[positionJointIndex] = static_cast<float>(
+                    clamp((q_measured_[joint_name]-limits.min_position) / (limits.max_position - limits.min_position), 0.0, 1.0));
+            }
             else
                 lcm_pose_msg.joint_position[positionJointIndex] = static_cast<float>(q_measured_[joint_name]);
 
@@ -422,8 +421,10 @@ namespace valkyrie_translator {
 
                 double &q_desired = parent_.latest_commands_[joint_name];
 
+
+                joint_limits_interface::JointLimits &limits = parent_.joint_limits_[joint_name];
                 if (parent_.commands_modulate_on_joint_limits_range_)
-                    q_desired = msg->joint_position[i] * parent_.q_joint_limits_range_[joint_name];
+                    q_desired = msg->joint_position[i] * (limits.max_position - limits.min_position) + limits.min_position;
                 else
                     q_desired = msg->joint_position[i];
 

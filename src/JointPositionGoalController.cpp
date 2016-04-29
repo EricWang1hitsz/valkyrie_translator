@@ -220,12 +220,15 @@ namespace valkyrie_translator {
         // initialize command buffer for each joint we found on the HW
         for (unsigned int i = 0; i < positionNames.size(); i++) {
             if (use_joint_selection &&
-                std::find(joint_names_.begin(), joint_names_.end(), positionNames[i]) == joint_names_.end())
+                std::find(joint_names_.begin(), joint_names_.end(), positionNames[i]) == joint_names_.end()){
+                ROS_INFO_STREAM("I see a position interface for " << positionNames[i] << " ... but not using it.");
                 continue;
+            }
 
             try {
                 positionJointHandles_[positionNames[i]] = position_hw->getHandle(positionNames[i]);
                 latest_commands_[positionNames[i]] = 0.0;
+                ROS_INFO_STREAM("I see a position interface for " << positionNames[i] << " and I claimed it.");
             } catch (const hardware_interface::HardwareInterfaceException& e) {
                 ROS_ERROR_STREAM("Could not retrieve handle for " << positionNames[i] << ": " << e.what());
             }
@@ -268,7 +271,11 @@ namespace valkyrie_translator {
             double &q_delta = q_delta_[joint_name];
             double &q_start = q_start_[joint_name];
 
-            double eta = std::max(0.0, std::min(1.0, dt / q_move_time_));
+            double eta;
+            if (q_move_time_ > 0.0)
+                eta = std::max(0.0, std::min(1.0, dt / q_move_time_));
+            else
+                eta = 0.0;
             double q_command = eta * q_desired + (1 - eta) * q_start;
 
             // Check that new position is within joint position limits, enforce by clamping
@@ -409,7 +416,7 @@ namespace valkyrie_translator {
                                                                           const std::string &channel,
                                                                           const bot_core::joint_angles_t *msg) {
         // Reset q_move_time_
-        parent_.q_move_time_ = 0;
+        parent_.q_move_time_ = 0.0;
         parent_.last_update_ = ros::Time::now();
 
         // Iterate over all received joints
@@ -428,14 +435,15 @@ namespace valkyrie_translator {
                 else
                     q_desired = msg->joint_position[i];
 
-                double &q = parent_.q_measured_[joint_name];
+                // ramp between last commanded value and new commanded value
+                double &q_last_commanded = parent_.q_last_commanded_[joint_name];
                 double &q_delta = parent_.q_delta_[joint_name];
-                q_delta = q_desired - q;
+                q_delta = q_desired - q_last_commanded;
                 double &q_start = parent_.q_start_[joint_name];
-                q_start = q;
+                q_start = q_last_commanded;
 
                 // Calculate move time for joint, set controller q_move_time_ to largest value
-                double tmp_q_move_time = std::abs(q_delta) / parent_.max_joint_velocity_;
+                double tmp_q_move_time = std::fabs(q_delta) / parent_.max_joint_velocity_;
                 if (tmp_q_move_time > parent_.q_move_time_)
                     parent_.q_move_time_ = tmp_q_move_time;
             }

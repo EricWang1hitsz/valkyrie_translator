@@ -7,32 +7,32 @@ HandPositionGoalController:
     control_state_channel: "HAND_STATE"
     control_state_publish_frequency: 50
     joints: # Position-commanded joints
-        # - leftIndexFingerMotorPitch1
-        # - leftMiddleFingerMotorPitch1
-        # - leftPinkyMotorPitch1
-        # - leftThumbMotorPitch1
-        # - leftThumbMotorPitch2
+         - leftIndexFingerMotorPitch1
+         - leftMiddleFingerMotorPitch1
+         - leftPinkyMotorPitch1
+         - leftThumbMotorPitch1
+         - leftThumbMotorPitch2
         # - leftThumbMotorRoll
-        - rightIndexFingerMotorPitch1
-        - rightMiddleFingerMotorPitch1
-        - rightPinkyMotorPitch1
-        - rightThumbMotorPitch1
-        - rightThumbMotorPitch2
-        - rightThumbMotorRoll
-    joint_velocity_limit: 0.262 # rad/s
+        #- rightIndexFingerMotorPitch1
+        #- rightMiddleFingerMotorPitch1
+        #- rightPinkyMotorPitch1
+        #- rightThumbMotorPitch1
+        #- rightThumbMotorPitch2
+        #- rightThumbMotorRoll
+    joint_velocity_limit: 1.0 # rad/s
     joint_limits:
         leftIndexFingerMotorPitch1:
             has_position_limits: true
             min_position: 0.5
-            max_position: 2.0
+            max_position: 2.5
         leftMiddleFingerMotorPitch1:
             has_position_limits: true
             min_position: 0.5
-            max_position: 2.0
+            max_position: 2.7
         leftPinkyMotorPitch1:
             has_position_limits: true
             min_position: 0.5
-            max_position: 2.0
+            max_position: 2.7
         leftThumbMotorPitch1:
             has_position_limits: true
             min_position: 0.5
@@ -44,23 +44,23 @@ HandPositionGoalController:
         leftThumbMotorRoll:
             has_position_limits: true
             min_position: 0.5
-            max_position: 1.7
+            max_position: 1.5
         rightIndexFingerMotorPitch1:
             has_position_limits: true
             min_position: 0.5
-            max_position: 2.8
+            max_position: 2.0
         rightMiddleFingerMotorPitch1:
             has_position_limits: true
             min_position: 0.5
-            max_position: 3.0
+            max_position: 2.0
         rightPinkyMotorPitch1:
             has_position_limits: true
             min_position: 0.5
-            max_position: 2.5
+            max_position: 2.0
         rightThumbMotorPitch1:
             has_position_limits: true
             min_position: 0.5
-            max_position: 1.6
+            max_position: 1.5
         rightThumbMotorPitch2:
             has_position_limits: true
             min_position: 0.5
@@ -68,4 +68,4 @@ HandPositionGoalController:
         rightThumbMotorRoll:
             has_position_limits: true
             min_position: 0.5
-            max_position: 1.7
+            max_position: 1.5

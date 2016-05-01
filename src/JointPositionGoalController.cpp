@@ -147,8 +147,8 @@ namespace valkyrie_translator {
 
         // Retrieve LCM channel name on which to send joint positions (control state)
         if (!controller_nh.getParam("control_state_channel", control_state_channel_)) {
-            ROS_WARN("Cannot retrieve control state channel, defaulting to VAL_CORE_ROBOT_STATE");
-            control_state_channel_ = "VAL_CORE_ROBOT_STATE";
+            ROS_WARN("Cannot retrieve control state channel, defaulting to CORE_ROBOT_STATE");
+            control_state_channel_ = "CORE_ROBOT_STATE";
         }
         if (!controller_nh.getParam("control_state_publish_frequency", control_state_publish_frequency_))
             control_state_publish_frequency_ = 500;
@@ -342,7 +342,7 @@ namespace valkyrie_translator {
     }
 
     void JointPositionGoalController::publishCoreRobotStateToLCM(int64_t utime) {
-        // VAL_CORE_ROBOT_STATE, pushes out the joint states for all joints
+        // CORE_ROBOT_STATE, pushes out the joint states for all joints
         bot_core::joint_state_t lcm_pose_msg;
         lcm_pose_msg.utime = utime;
         lcm_pose_msg.num_joints = (int16_t) number_of_joint_interfaces_;

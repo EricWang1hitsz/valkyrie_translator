@@ -1,0 +1,9 @@
+<launch>
+
+  <!-- Load joint controller configurations from YAML file to parameter server -->
+  <rosparam file="$(find valkyrie_translator)/config/WholeBodyControl.yaml" command="load"/>
+
+  <!-- load the controllers -->
+  <node name="LCM2ROSControl_spawner" pkg="controller_manager" type="spawner" respawn="false" output="screen" args="LCM2ROSControl"/>
+
+</launch>

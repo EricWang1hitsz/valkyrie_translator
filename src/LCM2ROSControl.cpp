@@ -240,7 +240,7 @@ void LCM2ROSControl::update(const ros::Time& time, const ros::Duration& period)
 
   size_t numberOfJointInterfaces = effortJointHandles.size() + positionJointHandles.size();
 
-      // VAL_CORE_ROBOT_STATE
+      // CORE_ROBOT_STATE
       // push out the joint states for all joints we see advertised
       // and also the commanded torques, for reference
   bot_core::joint_state_t lcm_pose_msg;
@@ -429,74 +429,6 @@ void LCM2ROSControl::update(const ros::Time& time, const ros::Duration& period)
 
           positionJointIndex++;
         }
-
-        if(publishCoreRobotState){
-          lcm_->publish("VAL_CORE_ROBOT_STATE", &lcm_pose_msg);
-          lcm_->publish("VAL_COMMAND_FEEDBACK", &lcm_commanded_msg);
-          lcm_->publish("VAL_COMMAND_FEEDBACK_TORQUE", &lcm_torque_msg);
-        }
-
-        if(publish_est_robot_state){
-          lcm_->publish("EST_ROBOT_STATE", &lcm_state_msg);
-        }      
-        
-
-      // push out the measurements for all imus we see advertised
-        for (auto iter = imuSensorHandles.begin(); iter != imuSensorHandles.end(); iter ++){
-          bot_core::ins_t lcm_imu_msg;
-          std::ostringstream imuchannel;
-          imuchannel << "VAL_IMU_" << iter->first;
-          lcm_imu_msg.utime = utime;
-
-          lcm_imu_msg.quat[0]= iter->second.getOrientation()[0];
-          lcm_imu_msg.quat[1]= iter->second.getOrientation()[1];
-          lcm_imu_msg.quat[2]= iter->second.getOrientation()[2];
-          lcm_imu_msg.quat[3]= iter->second.getOrientation()[3];
-
-          lcm_imu_msg.gyro[0] = iter->second.getAngularVelocity()[0];
-          lcm_imu_msg.gyro[1] = iter->second.getAngularVelocity()[1];
-          lcm_imu_msg.gyro[2] = iter->second.getAngularVelocity()[2];
-
-          lcm_imu_msg.accel[0] = iter->second.getLinearAcceleration()[0];
-          lcm_imu_msg.accel[1] = iter->second.getLinearAcceleration()[1];
-          lcm_imu_msg.accel[2] = iter->second.getLinearAcceleration()[2];
-
-        lcm_imu_msg.mag[0] = 0.0; // TODO: to be revisited after IMU upgrade
-        lcm_imu_msg.mag[1] = 0.0;
-        lcm_imu_msg.mag[2] = 0.0;
-
-        lcm_imu_msg.pressure = 0.0;
-        lcm_imu_msg.rel_alt = 0.0;
-
-        if(publishCoreRobotState){
-          lcm_->publish(imuchannel.str(), &lcm_imu_msg);
-        }
-        
-      }
-
-      // push out the measurements for all ft's we see advertised
-      bot_core::six_axis_force_torque_array_t lcm_ft_array_msg;
-      lcm_ft_array_msg.utime = utime;
-      lcm_ft_array_msg.num_sensors = forceTorqueHandles.size();
-      lcm_ft_array_msg.names.resize(forceTorqueHandles.size());
-      lcm_ft_array_msg.sensors.resize(forceTorqueHandles.size());
-      int i = 0;
-      for (auto iter = forceTorqueHandles.begin(); iter != forceTorqueHandles.end(); iter ++){
-        lcm_ft_array_msg.sensors[i].utime = utime;
-        lcm_ft_array_msg.sensors[i].force[0] = iter->second.getForce()[0];
-        lcm_ft_array_msg.sensors[i].force[1] = iter->second.getForce()[1];
-        lcm_ft_array_msg.sensors[i].force[2] = iter->second.getForce()[2];
-        lcm_ft_array_msg.sensors[i].moment[0] = iter->second.getTorque()[0];
-        lcm_ft_array_msg.sensors[i].moment[1] = iter->second.getTorque()[1];
-        lcm_ft_array_msg.sensors[i].moment[2] = iter->second.getTorque()[2];
-
-        lcm_ft_array_msg.names[i] = iter->first;
-        i++;
-      }
-
-      if(publishCoreRobotState){
-        lcm_->publish("VAL_FORCE_TORQUE", &lcm_ft_array_msg);  
-      }
       
     }
 

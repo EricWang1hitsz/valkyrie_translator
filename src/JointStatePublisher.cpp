@@ -272,7 +272,7 @@ namespace valkyrie_translator {
         for (auto it = imu_sensor_handles_.begin(); it != imu_sensor_handles_.end(); it++) {
             bot_core::ins_t lcm_imu_msg;
             std::ostringstream imu_channel;
-            imu_channel << "VAL_IMU_" << it->first;
+            imu_channel << "IMU_" << it->first;
             lcm_imu_msg.utime = utime;
 
             lcm_imu_msg.quat[0] = it->second.getOrientation()[0];
@@ -319,7 +319,7 @@ namespace valkyrie_translator {
             lcm_ft_array_msg.names[i] = it->first;
             i++;
         }
-        lcm_->publish("VAL_FORCE_TORQUE", &lcm_ft_array_msg);
+        lcm_->publish("FORCE_TORQUE", &lcm_ft_array_msg);
     }
 
     void JointStatePublisher::stopping(const ros::Time &time) { }

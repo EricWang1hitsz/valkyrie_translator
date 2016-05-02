@@ -210,7 +210,7 @@ namespace valkyrie_translator
 
       size_t numberOfJointInterfaces = effortJointHandles.size() + positionJointHandles.size();
 
-      // VAL_CORE_ROBOT_STATE
+      // CORE_ROBOT_STATE
       // push out the joint states for all joints we see advertised
       // and also the commanded torques, for reference
       bot_core::joint_state_t lcm_pose_msg;
@@ -349,7 +349,7 @@ namespace valkyrie_translator
           positionJointIndex++;
       }
 
-      lcm_->publish("VAL_CORE_ROBOT_STATE", &lcm_pose_msg);
+      lcm_->publish("CORE_ROBOT_STATE", &lcm_pose_msg);
       lcm_->publish("VAL_COMMAND_FEEDBACK", &lcm_commanded_msg);
       lcm_->publish("VAL_COMMAND_FEEDBACK_TORQUE", &lcm_torque_msg);
       lcm_->publish("EST_ROBOT_STATE", &lcm_state_msg);
@@ -358,7 +358,7 @@ namespace valkyrie_translator
       for (auto iter = imuSensorHandles.begin(); iter != imuSensorHandles.end(); iter ++){
         bot_core::ins_t lcm_imu_msg;
         std::ostringstream imuchannel;
-        imuchannel << "VAL_IMU_" << iter->first;
+        imuchannel << "IMU_" << iter->first;
         lcm_imu_msg.utime = utime;
 
         lcm_imu_msg.quat[0]= iter->second.getOrientation()[0];
@@ -403,7 +403,7 @@ namespace valkyrie_translator
         lcm_ft_array_msg.names[i] = iter->first;
         i++;
       }
-      lcm_->publish("VAL_FORCE_TORQUE", &lcm_ft_array_msg);
+      lcm_->publish("FORCE_TORQUE", &lcm_ft_array_msg);
    }
 
    void LCM2ROSControl::stopping(const ros::Time& time)

@@ -238,7 +238,7 @@ bool LCM2ROSControl::loadBehaviorGainOverrides(const std::vector<std::string>& e
     return false;
   }
 
-  std::vector<std::pair<Behavior, std::string> > behaviors = {{FREEZE, "freeze"}, {POSITION_CONTROL, "position_control"}};
+  std::vector<std::pair<Behavior, std::string> > behaviors = {{Behavior::FREEZE, "freeze"}, {Behavior::POSITION_CONTROL, "position_control"}};
   for (auto iter = behaviors.begin(); iter != behaviors.end(); ++iter) {
     if (!gain_overrides.hasMember(iter->second)) {
       ROS_ERROR_STREAM("Could not find gain overrides for behavior " << iter->second);
@@ -500,18 +500,18 @@ double LCM2ROSControl::commandEffort(const std::string& joint_name, const hardwa
       q_desired = command.position;
       qd_desired = 0.0;
       f_desired = 0.0;
-      gains = behavior_gain_overrides[POSITION_CONTROL][joint_name];
+      gains = behavior_gain_overrides[Behavior::POSITION_CONTROL][joint_name];
       break;
     case Behavior::FREEZE:
       q_desired = latched_positions[joint_name];
       qd_desired = 0.0;
-      gains = behavior_gain_overrides[FREEZE][joint_name];
+      gains = behavior_gain_overrides[Behavior::FREEZE][joint_name];
       break;
     default:
-      ROS_WARN_STREAM("Unknown behavior: " << behavior << ", treating it as FREEZE");
+      ROS_WARN_STREAM("Unknown behavior, treating it as FREEZE");
       q_desired = latched_positions[joint_name];
       qd_desired = 0.0;
-      gains = behavior_gain_overrides[FREEZE][joint_name];
+      gains = behavior_gain_overrides[Behavior::FREEZE][joint_name];
       break;
   }
 
@@ -598,17 +598,17 @@ void LCM2ROSControl::latchCurrentPositions() {
 
       switch (msg->behavior) {
         case msg->FREEZE:
-          parent_.transitionTo(FREEZE, duration);
+          parent_.transitionTo(Behavior::FREEZE, duration);
           break;
         case msg->POSITION_CONTROL:
-          parent_.transitionTo(POSITION_CONTROL, duration);
+          parent_.transitionTo(Behavior::POSITION_CONTROL, duration);
           break;
         case msg->NORMAL:
-          parent_.transitionTo(NORMAL, duration);
+          parent_.transitionTo(Behavior::NORMAL, duration);
           break;
         default:
           ROS_WARN_STREAM("Unknown behavior: " << msg->behavior << ", treating it as FREEZE");
-          parent_.transitionTo(FREEZE, duration);
+          parent_.transitionTo(Behavior::FREEZE, duration);
           break;
       }
     }

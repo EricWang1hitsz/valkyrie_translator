@@ -29,13 +29,13 @@
 namespace valkyrie_translator
 {
 
-  enum Behavior {
+  enum class Behavior {
     FREEZE,
     POSITION_CONTROL,
     NORMAL
   };
 
-  typedef struct _joint_gains {
+  struct joint_gains {
     double k_q_p; // corresponds to kp_position in drcsim API
     double k_q_i; // corresponds to ki_position in drcsim API
     double k_qd_p; // corresponds to kp_velocity in drcsim API
@@ -44,15 +44,15 @@ namespace valkyrie_translator
     double ff_qd_d;
     double ff_f_d;
     double ff_const;
-  } joint_gains;
+  };
 
-   typedef struct _joint_command {
+   struct joint_command {
     double position;
     double velocity;
     double effort;
 
     joint_gains gains;
-   } joint_command;
+   };
 
    class LCM2ROSControl;
 

@@ -19,6 +19,7 @@
 #include "lcmtypes/bot_core/ins_t.hpp"
 #include "lcmtypes/bot_core/joint_angles_t.hpp"
 #include "lcmtypes/bot_core/atlas_command_t.hpp"
+#include "lcmtypes/drc/behavior_transition_t.hpp"
 
 #include <set>
 #include <string>
@@ -64,6 +65,8 @@ namespace valkyrie_translator
         virtual ~LCM2ROSControl_LCMHandler();
         void jointCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
                                const bot_core::atlas_command_t* msg);
+        void behaviorHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
+                             const drc::behavior_transition_t* msg);
         void update();
    private:
         LCM2ROSControl& parent_;
@@ -97,6 +100,7 @@ namespace valkyrie_translator
         double DEFAULT_MAX_EFFORT = 1000.0;
 
         std::map<std::string, joint_limits_interface::JointLimits> joint_limits;
+        void transitionTo(Behavior new_behavior, ros::Duration transition_duration);
 
    protected:
         virtual bool initRequest(hardware_interface::RobotHW* robot_hw,
@@ -121,7 +125,6 @@ namespace valkyrie_translator
         ros::Duration last_transition_duration;
         std::map<Behavior, std::map<std::string, joint_gains> > behavior_gain_overrides;
 
-        void transitionTo(Behavior new_behavior, ros::Duration transition_duration);
         void latchCurrentPositions();
         bool loadBehaviorGainOverrides(const std::vector<std::string>& effort_names, const ros::NodeHandle& controller_nh);
         double commandEffort(const std::string& joint_name, const hardware_interface::JointHandle& joint_handle, const joint_command& command, const double dt, const Behavior& behavior);

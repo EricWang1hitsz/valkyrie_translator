@@ -561,6 +561,7 @@ void LCM2ROSControl::latchCurrentPositions() {
         std::cerr << "ERROR: handler lcm is not good()" << std::endl;
       }
       lcm_->subscribe("ROBOT_COMMAND", &LCM2ROSControl_LCMHandler::jointCommandHandler, this);
+      lcm_->subscribe("ROBOT_BEHAVIOR", &LCM2ROSControl_LCMHandler::behaviorHandler, this);
     }
     LCM2ROSControl_LCMHandler::~LCM2ROSControl_LCMHandler() {}
 
@@ -591,6 +592,25 @@ void LCM2ROSControl::latchCurrentPositions() {
     }
     void LCM2ROSControl_LCMHandler::update(){
       lcm_->handleTimeout(0);
+    }
+    void LCM2ROSControl_LCMHandler::behaviorHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel, const drc::behavior_transition_t* msg) {
+      ros::Duration duration(msg->transition_duration_s);
+
+      switch (msg->behavior) {
+        case msg->FREEZE:
+          parent_.transitionTo(FREEZE, duration);
+          break;
+        case msg->POSITION_CONTROL:
+          parent_.transitionTo(POSITION_CONTROL, duration);
+          break;
+        case msg->NORMAL:
+          parent_.transitionTo(NORMAL, duration);
+          break;
+        default:
+          ROS_WARN_STREAM("Unknown behavior: " << msg->behavior << ", treating it as FREEZE");
+          parent_.transitionTo(FREEZE, duration);
+          break;
+      }
     }
   }
 

@@ -302,24 +302,32 @@ namespace valkyrie_translator {
     void JointStatePublisher::publishForceTorqueReadings(int64_t utime) {
         bot_core::six_axis_force_torque_array_t lcm_ft_array_msg;
         lcm_ft_array_msg.utime = utime;
-        lcm_ft_array_msg.num_sensors = static_cast<int32_t>(force_torque_handles_.size());
-        lcm_ft_array_msg.names.resize(force_torque_handles_.size());
-        lcm_ft_array_msg.sensors.resize(force_torque_handles_.size());
+        lcm_ft_array_msg.num_sensors = 2;
+        lcm_ft_array_msg.names.resize(2);
+        lcm_ft_array_msg.sensors.resize(2);
 
-        unsigned int i = 0;
-        for (auto it = force_torque_handles_.begin(); it != force_torque_handles_.end(); it++) {
-            lcm_ft_array_msg.sensors[i].utime = utime;
-            lcm_ft_array_msg.sensors[i].force[0] = it->second.getForce()[0];
-            lcm_ft_array_msg.sensors[i].force[1] = it->second.getForce()[1];
-            lcm_ft_array_msg.sensors[i].force[2] = it->second.getForce()[2];
-            lcm_ft_array_msg.sensors[i].moment[0] = it->second.getTorque()[0];
-            lcm_ft_array_msg.sensors[i].moment[1] = it->second.getTorque()[1];
-            lcm_ft_array_msg.sensors[i].moment[2] = it->second.getTorque()[2];
+        // l_foot
+        lcm_ft_array_msg.sensors[0].utime = utime;
+        lcm_ft_array_msg.sensors[0].force[0] = force_torque_handles_["leftFootSixAxis"].getForce()[0];
+        lcm_ft_array_msg.sensors[0].force[1] = force_torque_handles_["leftFootSixAxis"].getForce()[1];
+        lcm_ft_array_msg.sensors[0].force[2] = force_torque_handles_["leftFootSixAxis"].getForce()[2];
+        lcm_ft_array_msg.sensors[0].moment[0] = force_torque_handles_["leftFootSixAxis"].getTorque()[0];
+        lcm_ft_array_msg.sensors[0].moment[1] = force_torque_handles_["leftFootSixAxis"].getTorque()[1];
+        lcm_ft_array_msg.sensors[0].moment[2] = force_torque_handles_["leftFootSixAxis"].getTorque()[2];
+        lcm_ft_array_msg.names[0] = "l_foot";
 
-            lcm_ft_array_msg.names[i] = it->first;
-            i++;
-        }
-        lcm_->publish("FORCE_TORQUE", &lcm_ft_array_msg);
+        // r_foot
+        lcm_ft_array_msg.sensors[1].utime = utime;
+        lcm_ft_array_msg.sensors[1].force[0] = force_torque_handles_["rightFootSixAxis"].getForce()[0];
+        lcm_ft_array_msg.sensors[1].force[1] = force_torque_handles_["rightFootSixAxis"].getForce()[1];
+        lcm_ft_array_msg.sensors[1].force[2] = force_torque_handles_["rightFootSixAxis"].getForce()[2];
+        lcm_ft_array_msg.sensors[1].moment[0] = force_torque_handles_["rightFootSixAxis"].getTorque()[0];
+        lcm_ft_array_msg.sensors[1].moment[1] = force_torque_handles_["rightFootSixAxis"].getTorque()[1];
+        lcm_ft_array_msg.sensors[1].moment[2] = force_torque_handles_["rightFootSixAxis"].getTorque()[2];
+        lcm_ft_array_msg.names[1] = "r_foot";
+
+
+        lcm_->publish("FORCE_TORQUE", &lcm_ft_array_msg); 
     }
 
     void JointStatePublisher::stopping(const ros::Time &time) { }

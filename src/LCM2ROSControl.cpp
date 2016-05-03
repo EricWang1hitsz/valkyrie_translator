@@ -508,6 +508,7 @@ double LCM2ROSControl::commandEffort(const std::string& joint_name, const hardwa
       gains = behavior_gain_overrides[FREEZE][joint_name];
       break;
     default:
+      ROS_WARN_STREAM("Unknown behavior: " << behavior << ", treating it as FREEZE");
       q_desired = latched_positions[joint_name];
       qd_desired = 0.0;
       gains = behavior_gain_overrides[FREEZE][joint_name];

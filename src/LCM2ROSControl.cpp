@@ -107,14 +107,14 @@ namespace valkyrie_translator
       latest_commands[effortNames[i]].position = 0.0;
       latest_commands[effortNames[i]].velocity = 0.0;
       latest_commands[effortNames[i]].effort = 0.0;
-      latest_commands[effortNames[i]].k_q_p = 0.0;
-      latest_commands[effortNames[i]].k_q_i = 0.0;
-      latest_commands[effortNames[i]].k_qd_p = 0.0;
-      latest_commands[effortNames[i]].k_f_p = 0.0;
-      latest_commands[effortNames[i]].ff_qd = 0.0;
-      latest_commands[effortNames[i]].ff_qd_d = 0.0;
-      latest_commands[effortNames[i]].ff_f_d = 0.0;
-      latest_commands[effortNames[i]].ff_const = 0.0;
+      latest_commands[effortNames[i]].gains.k_q_p = 0.0;
+      latest_commands[effortNames[i]].gains.k_q_i = 0.0;
+      latest_commands[effortNames[i]].gains.k_qd_p = 0.0;
+      latest_commands[effortNames[i]].gains.k_f_p = 0.0;
+      latest_commands[effortNames[i]].gains.ff_qd = 0.0;
+      latest_commands[effortNames[i]].gains.ff_qd_d = 0.0;
+      latest_commands[effortNames[i]].gains.ff_f_d = 0.0;
+      latest_commands[effortNames[i]].gains.ff_const = 0.0;
     } catch (const hardware_interface::HardwareInterfaceException& e) {
       ROS_ERROR_STREAM("Could not retrieve handle for " << effortNames[i] << ": " << e.what());
     }
@@ -146,14 +146,14 @@ namespace valkyrie_translator
       latest_commands[positionNames[i]].position = 0.0;
       latest_commands[positionNames[i]].velocity = 0.0;
       latest_commands[positionNames[i]].effort = 0.0;
-      latest_commands[positionNames[i]].k_q_p = 0.0;
-      latest_commands[positionNames[i]].k_q_i = 0.0;
-      latest_commands[positionNames[i]].k_qd_p = 0.0;
-      latest_commands[positionNames[i]].k_f_p = 0.0;
-      latest_commands[positionNames[i]].ff_qd = 0.0;
-      latest_commands[positionNames[i]].ff_qd_d = 0.0;
-      latest_commands[positionNames[i]].ff_f_d = 0.0;
-      latest_commands[positionNames[i]].ff_const = 0.0;
+      latest_commands[positionNames[i]].gains.k_q_p = 0.0;
+      latest_commands[positionNames[i]].gains.k_q_i = 0.0;
+      latest_commands[positionNames[i]].gains.k_qd_p = 0.0;
+      latest_commands[positionNames[i]].gains.k_f_p = 0.0;
+      latest_commands[positionNames[i]].gains.ff_qd = 0.0;
+      latest_commands[positionNames[i]].gains.ff_qd_d = 0.0;
+      latest_commands[positionNames[i]].gains.ff_f_d = 0.0;
+      latest_commands[positionNames[i]].gains.ff_const = 0.0;
     } catch (const hardware_interface::HardwareInterfaceException& e) {
       ROS_ERROR_STREAM("Could not retrieve handle for " << positionNames[i] << ": " << e.what());
     }
@@ -221,12 +221,64 @@ namespace valkyrie_translator
     << imu_hw_claims.size() << " IMUs" << std::endl
     << effort_hw_claims.size() << " effort-controlled joints" << std::endl
     << position_hw_claims.size() << " position-controlled joints" << std::endl);
+
+  if (!loadBehaviorGainOverrides(effortNames, controller_nh)) {
+    ROS_ERROR("Failed to load behavior gain overrides");
+    return false;
+  }
+
+  return true;
+}
+
+bool LCM2ROSControl::loadBehaviorGainOverrides(const std::vector<std::string>& effort_names, const ros::NodeHandle& controller_nh) {
+  XmlRpc::XmlRpcValue gain_overrides;
+
+  if (!controller_nh.getParam("gain_overrides", gain_overrides)) {
+    ROS_ERROR("Could not get gain_overrides, exiting");
+    return false;
+  }
+
+  std::vector<std::pair<Behavior, std::string> > behaviors = {{FREEZE, "freeze"}, {POSITION_CONTROL, "position_control"}};
+  for (auto iter = behaviors.begin(); iter != behaviors.end(); ++iter) {
+    if (!gain_overrides.hasMember(iter->second)) {
+      ROS_ERROR_STREAM("Could not find gain overrides for behavior " << iter->second);
+      return false;
+    }
+
+    XmlRpc::XmlRpcValue& behavior_overrides = gain_overrides[iter->second];
+
+    for (auto joint = effort_names.begin(); joint != effort_names.end(); ++joint) {
+      if (!behavior_overrides.hasMember(*joint)) {
+        ROS_ERROR_STREAM("Could not find gain overrides for joint " << *joint << " in behavior " << iter->second);
+        return false;
+      }
+
+      XmlRpc::XmlRpcValue& joint_overrides = behavior_overrides[*joint];
+
+      std::vector<std::string> gain_types = {"k_q_p", "k_qd_p", "k_q_i", "k_f_p", "ff_qd", "ff_qd_d", "ff_f_d", "ff_const"};
+      for (auto gain_type = gain_types.begin(); gain_type != gain_types.end(); ++gain_type) {
+        if (!joint_overrides.hasMember(*gain_type)) {
+          ROS_ERROR_STREAM("Could not find override for gain " << *gain_type << " for joint " << *joint << " for behavior " << iter->second);
+        }
+      }
+      behavior_gain_overrides[iter->first][*joint].k_q_p = joint_overrides["k_q_p"];
+      behavior_gain_overrides[iter->first][*joint].k_qd_p = joint_overrides["k_qd_p"];
+      behavior_gain_overrides[iter->first][*joint].k_q_i = joint_overrides["k_q_i"];
+      behavior_gain_overrides[iter->first][*joint].k_f_p = joint_overrides["k_f_p"];
+      behavior_gain_overrides[iter->first][*joint].ff_qd = joint_overrides["ff_qd"];
+      behavior_gain_overrides[iter->first][*joint].ff_qd_d = joint_overrides["ff_qd_d"];
+      behavior_gain_overrides[iter->first][*joint].ff_f_d = joint_overrides["ff_f_d"];
+      behavior_gain_overrides[iter->first][*joint].ff_const = joint_overrides["ff_const"];
+    }
+  }
+
   return true;
 }
 
 void LCM2ROSControl::starting(const ros::Time& time)
 {
   last_update = time;
+  latchCurrentPositions();
 }
 
 void LCM2ROSControl::update(const ros::Time& time, const ros::Duration& period)
@@ -298,23 +350,16 @@ void LCM2ROSControl::update(const ros::Time& time, const ros::Duration& period)
   size_t effortJointIndex = 0;
   for(auto iter = effortJointHandles.begin(); iter != effortJointHandles.end(); iter++)
   {
-          // see drc_joint_command_t.lcm for explanation of gains and
-          // force calculation.
     double q = iter->second.getPosition();
     double qd = iter->second.getVelocity();
     double f = iter->second.getEffort();
 
     joint_command& command = latest_commands[iter->first];
-    double command_effort =
-    command.k_q_p * ( command.position - q ) +
-    command.k_q_i * ( command.position - q ) * dt +
-    command.k_qd_p * ( command.velocity - qd) +
-    command.k_f_p * ( command.effort - f) +
-    command.ff_qd * ( qd ) +
-    command.ff_qd_d * ( command.velocity ) +
-    command.ff_f_d * ( command.effort ) +
-    command.ff_const;
 
+    // Mix the previous and current behavior torques to apply a smooth transition
+    double alpha = currentTransitionRatio();
+    double command_effort = alpha * commandEffort(iter->first, iter->second, command, dt, current_behavior)
+      + (1.0 - alpha) * commandEffort(iter->first, iter->second, command, dt, previous_behavior);
 
     auto limits_search = joint_limits.find(iter->first);
     joint_limits_interface::JointLimits limits;
@@ -429,11 +474,84 @@ void LCM2ROSControl::update(const ros::Time& time, const ros::Duration& period)
 
           positionJointIndex++;
         }
-      
     }
 
     void LCM2ROSControl::stopping(const ros::Time& time)
     {}
+
+double LCM2ROSControl::commandEffort(const std::string& joint_name, const hardware_interface::JointHandle& joint_handle, const joint_command& command, const double dt, const Behavior& behavior) {
+  // see drc_joint_command_t.lcm for explanation of gains and
+  // force calculation.
+  double q = joint_handle.getPosition();
+  double qd = joint_handle.getVelocity();
+  double f = joint_handle.getEffort();
+  double q_desired, qd_desired, f_desired;
+
+  joint_gains gains;
+
+  switch (behavior) {
+    case Behavior::NORMAL:
+      q_desired = command.position;
+      qd_desired = command.velocity;
+      f_desired = command.effort;
+      gains = command.gains;
+      break;
+    case Behavior::POSITION_CONTROL:
+      q_desired = command.position;
+      qd_desired = 0.0;
+      f_desired = 0.0;
+      gains = behavior_gain_overrides[POSITION_CONTROL][joint_name];
+      break;
+    case Behavior::FREEZE:
+      q_desired = latched_positions[joint_name];
+      qd_desired = 0.0;
+      gains = behavior_gain_overrides[FREEZE][joint_name];
+      break;
+    default:
+      q_desired = latched_positions[joint_name];
+      qd_desired = 0.0;
+      gains = behavior_gain_overrides[FREEZE][joint_name];
+      break;
+  }
+
+  double command_effort = 
+    gains.k_q_p * ( q_desired - q ) +
+    gains.k_q_i * ( q_desired - q ) * dt +
+    gains.k_qd_p * ( qd_desired - qd) +
+    gains.k_f_p * ( f_desired - f) +
+    gains.ff_qd * ( qd ) +
+    gains.ff_qd_d * ( qd_desired ) +
+    gains.ff_f_d * ( f_desired ) +
+    gains.ff_const;
+  return command_effort;
+}
+
+double LCM2ROSControl::currentTransitionRatio() {
+  ros::Duration time_since_transition_start = ros::Time::now() - last_transition_start_time;
+  double alpha = time_since_transition_start.toSec() / last_transition_duration.toSec();
+
+  if (!std::isnormal(alpha)) {
+    return 1.0;
+  }
+
+  return std::min(std::max(alpha, 0.0), 1.0);
+}
+
+
+void LCM2ROSControl::transitionTo(Behavior new_behavior, ros::Duration transition_duration) {
+  latchCurrentPositions();
+  last_transition_start_time = ros::Time::now();
+  last_transition_duration = transition_duration;
+  previous_behavior = current_behavior;
+  current_behavior = new_behavior;
+}
+
+void LCM2ROSControl::latchCurrentPositions() {
+  for (auto iter = positionJointHandles.begin(); iter != positionJointHandles.end(); iter++) {
+    latched_positions[iter->first] = iter->second.getPosition();
+  }
+}
+
 
     LCM2ROSControl_LCMHandler::LCM2ROSControl_LCMHandler(LCM2ROSControl& parent) : parent_(parent) {
       lcm_ = std::shared_ptr<lcm::LCM>(new lcm::LCM);
@@ -457,14 +575,14 @@ void LCM2ROSControl::update(const ros::Time& time, const ros::Duration& period)
           command.position = msg->position[i];
           command.velocity = msg->velocity[i];
           command.effort = msg->effort[i];
-          command.k_q_p = msg->k_q_p[i];
-          command.k_q_i = msg->k_q_i[i];
-          command.k_qd_p = msg->k_qd_p[i];
-          command.k_f_p = msg->k_f_p[i];
-          command.ff_qd = msg->ff_qd[i];
-          command.ff_qd_d = msg->ff_qd_d[i];
-          command.ff_f_d = msg->ff_f_d[i];
-          command.ff_const = msg->ff_const[i];
+          command.gains.k_q_p = msg->k_q_p[i];
+          command.gains.k_q_i = msg->k_q_i[i];
+          command.gains.k_qd_p = msg->k_qd_p[i];
+          command.gains.k_f_p = msg->k_f_p[i];
+          command.gains.ff_qd = msg->ff_qd[i];
+          command.gains.ff_qd_d = msg->ff_qd_d[i];
+          command.gains.ff_f_d = msg->ff_f_d[i];
+          command.gains.ff_const = msg->ff_const[i];
         } else {
           // ROS_WARN("had no match.");
         }

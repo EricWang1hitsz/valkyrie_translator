@@ -2,7 +2,7 @@ LCM2ROSControl:
     type: valkyrie_translator/LCM2ROSControl
     publish_core_robot_state:  true
     publish_est_robot_state: false
-    apply_commands: false
+    apply_commands: true
 
     joints:
       - torsoYaw

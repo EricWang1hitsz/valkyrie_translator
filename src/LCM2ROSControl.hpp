@@ -127,6 +127,7 @@ namespace valkyrie_translator
 
         void latchCurrentPositions();
         bool loadBehaviorGainOverrides(const std::vector<std::string>& effort_names, const ros::NodeHandle& controller_nh);
+        double commandPosition(const std::string& joint_name, const joint_command& command, const Behavior& behavior);
         double commandEffort(const std::string& joint_name, const hardware_interface::JointHandle& joint_handle, const joint_command& command, const double dt, const Behavior& behavior);
         double currentTransitionRatio();
    };

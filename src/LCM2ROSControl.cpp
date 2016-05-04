@@ -436,7 +436,9 @@ void LCM2ROSControl::update(const ros::Time& time, const ros::Duration& period)
           double qd = iter->second.getVelocity();
 
           joint_command& command = latest_commands[iter->first];
-          double position_to_go = command.position;
+          double alpha = currentTransitionRatio();
+          double position_to_go = alpha * commandPosition(iter->first, command, current_behavior) 
+            + (1.0 - alpha) * commandPosition(iter->first, command, previous_behavior);
 
           // clamp to joint limits
           auto limits_search = joint_limits.find(iter->first);
@@ -478,6 +480,22 @@ void LCM2ROSControl::update(const ros::Time& time, const ros::Duration& period)
 
     void LCM2ROSControl::stopping(const ros::Time& time)
     {}
+
+double LCM2ROSControl::commandPosition(const std::string& joint_name, const joint_command& command, const Behavior& behavior) {
+  double position_to_go;
+
+  switch (behavior) {
+    case Behavior::FREEZE:
+      position_to_go = latched_positions[joint_name];
+      break;
+    default:
+      position_to_go = command.position;
+      break;
+  }
+
+  return position_to_go;
+}
+
 
 double LCM2ROSControl::commandEffort(const std::string& joint_name, const hardware_interface::JointHandle& joint_handle, const joint_command& command, const double dt, const Behavior& behavior) {
   // see drc_joint_command_t.lcm for explanation of gains and
@@ -535,6 +553,7 @@ double LCM2ROSControl::currentTransitionRatio() {
     return 1.0;
   }
 
+  return clamp(alpha, 0.0, 1.0);
   return std::min(std::max(alpha, 0.0), 1.0);
 }
 
@@ -548,7 +567,10 @@ void LCM2ROSControl::transitionTo(Behavior new_behavior, ros::Duration transitio
 }
 
 void LCM2ROSControl::latchCurrentPositions() {
-  for (auto iter = positionJointHandles.begin(); iter != positionJointHandles.end(); iter++) {
+  for (auto iter = positionJointHandles.begin(); iter != positionJointHandles.end(); ++iter) {
+    latched_positions[iter->first] = iter->second.getPosition();
+  }
+  for (auto iter = effortJointHandles.begin(); iter != effortJointHandles.end(); ++iter) {
     latched_positions[iter->first] = iter->second.getPosition();
   }
 }

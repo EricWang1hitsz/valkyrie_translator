@@ -91,6 +91,7 @@ namespace valkyrie_translator
         bool publishCoreRobotState = true;
         bool publish_est_robot_state = false;
         bool applyCommands = false;
+        bool publish_debug_data = false;
 
 
         double FORCE_CONTROL_ALLOWABLE_POSITION_ERR_BOUND = 0.1;
@@ -118,8 +119,8 @@ namespace valkyrie_translator
 
         ros::Time last_update;
 
-        Behavior current_behavior;
-        Behavior previous_behavior;
+        Behavior current_behavior = Behavior::FREEZE;
+        Behavior previous_behavior = Behavior::FREEZE;
         std::map<std::string, double> latched_positions;
         ros::Time last_transition_start_time;
         ros::Duration last_transition_duration;

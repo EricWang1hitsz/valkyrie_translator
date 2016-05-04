@@ -16,6 +16,7 @@ wolfgang.merkt@ed.ac.uk, 201603**
  **/
 
 #include "LCM2ROSControl.hpp"
+#include "lcmtypes/bot_core/system_status_t.hpp"
 
 inline double clamp(double x, double lower, double upper) {
   return std::max(lower, std::min(upper, x));
@@ -23,6 +24,11 @@ inline double clamp(double x, double lower, double upper) {
 
 namespace valkyrie_translator
 {
+  std::ostream& operator << (std::ostream& os, const Behavior& obj) {
+      os << static_cast<std::underlying_type<Behavior>::type>(obj);
+      return os;
+  }
+
  LCM2ROSControl::LCM2ROSControl()
  {}
 
@@ -50,6 +56,10 @@ namespace valkyrie_translator
   if (!controller_nh.getParam("apply_commands", applyCommands)) {
     ROS_WARN("Could not read desired setting for applying actual commands to the robot, defaulting to false");
     applyCommands = false;
+  }
+  if (!controller_nh.getParam("publish_debug_data", publish_debug_data)) {
+    ROS_WARN("Could not read desired setting for publish_debug_data, defaulting to false");
+    publish_debug_data = false;
   }
 
         // setup LCM (todo: move to constructor? how to propagate an error then?)
@@ -228,7 +238,7 @@ namespace valkyrie_translator
   }
 
   current_behavior = Behavior::FREEZE;
-  transitionTo(Behavior::Freeze, 0.0);
+  transitionTo(Behavior::FREEZE, ros::Duration(0.0));
 
   return true;
 }
@@ -479,6 +489,20 @@ void LCM2ROSControl::update(const ros::Time& time, const ros::Duration& period)
 
           positionJointIndex++;
         }
+
+        if (publish_debug_data) {     
+          lcm_->publish("LCM2ROSCONTROL_lcm_pose", &lcm_pose_msg);
+          lcm_->publish("LCM2ROSCONTROL_lcm_state", &lcm_state_msg);
+          lcm_->publish("LCM2ROSCONTROL_lcm_commanded", &lcm_commanded_msg);
+          lcm_->publish("LCM2ROSCONTROL_lcm_torque", &lcm_torque_msg);
+          bot_core::system_status_t status_msg;
+          std::ostringstream status;
+          status << "Current behavior: " << current_behavior << "\n";
+          status << "Previous behavior: " << previous_behavior << "\n";
+          status << "Transition ratio: " << currentTransitionRatio() << "\n";
+          status_msg.value = status.str();
+          lcm_->publish("LCM2ROSCONTROL_STATUS", &status_msg);
+        }
     }
 
     void LCM2ROSControl::stopping(const ros::Time& time)
@@ -526,12 +550,14 @@ double LCM2ROSControl::commandEffort(const std::string& joint_name, const hardwa
     case Behavior::FREEZE:
       q_desired = latched_positions[joint_name];
       qd_desired = 0.0;
+      f_desired = 0.0;
       gains = behavior_gain_overrides[Behavior::FREEZE][joint_name];
       break;
     default:
       ROS_WARN_STREAM("Unknown behavior, treating it as FREEZE");
       q_desired = latched_positions[joint_name];
       qd_desired = 0.0;
+      f_desired = 0.0;
       gains = behavior_gain_overrides[Behavior::FREEZE][joint_name];
       break;
   }

@@ -2,6 +2,7 @@ LCM2ROSControl:
     type: valkyrie_translator/LCM2ROSControl
     publish_core_robot_state:  true
     publish_est_robot_state: false
+    publish_debug_data: true
     apply_commands: true
 
     joints:

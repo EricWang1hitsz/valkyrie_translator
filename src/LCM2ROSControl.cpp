@@ -497,10 +497,14 @@ void LCM2ROSControl::update(const ros::Time& time, const ros::Duration& period)
           lcm_->publish("LCM2ROSCONTROL_lcm_torque", &lcm_torque_msg);
           bot_core::system_status_t status_msg;
           std::ostringstream status;
-          status << "Current behavior: " << current_behavior << "\n";
-          status << "Previous behavior: " << previous_behavior << "\n";
-          status << "Transition ratio: " << currentTransitionRatio() << "\n";
+          status << "Current behavior: " << current_behavior << " | ";
+          status << "Previous behavior: " << previous_behavior << " | ";
+          status << "Transition ratio: " << currentTransitionRatio() << " | ";
           status_msg.value = status.str();
+          status_msg.utime = 0;
+          status_msg.system = 0;
+          status_msg.importance = 0;
+          status_msg.frequency = 0;
           lcm_->publish("LCM2ROSCONTROL_STATUS", &status_msg);
         }
     }

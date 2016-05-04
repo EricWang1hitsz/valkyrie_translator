@@ -7,6 +7,8 @@
 #include <controller_interface/controller.h>
 #include <pluginlib/class_list_macros.h>
 #include <ros/node_handle.h>
+#include <joint_limits_interface/joint_limits.h>
+#include <joint_limits_interface/joint_limits_rosparam.h>
 
 #include <lcm/lcm-cpp.hpp>
 #include "lcmtypes/bot_core/joint_state_t.hpp"
@@ -72,6 +74,17 @@ namespace valkyrie_translator
         // Public so it can be modified by the LCMHandler. Should eventually create
         // a friend class arrangement to make this private again.
         std::map<std::string, joint_command> latest_commands;
+        bool publishCoreRobotState = true;
+        bool publish_est_robot_state = false;
+        bool applyCommands = false;
+
+        double FORCE_CONTROL_ALLOWABLE_POSITION_ERR_BOUND = 0.1;
+        double FORCE_CONTROL_MAX_CHANGE = 100.0;
+        double DEFAULT_MIN_POSITION = -M_PI;
+        double DEFAULT_MAX_POSITION = M_PI;
+        double DEFAULT_MAX_EFFORT = 1000.0;
+
+        std::map<std::string, joint_limits_interface::JointLimits> joint_limits;
 
    protected:
         virtual bool initRequest(hardware_interface::RobotHW* robot_hw,

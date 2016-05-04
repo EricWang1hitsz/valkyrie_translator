@@ -227,6 +227,9 @@ namespace valkyrie_translator
     return false;
   }
 
+  current_behavior = Behavior::FREEZE;
+  transitionTo(Behavior::Freeze, 0.0);
+
   return true;
 }
 

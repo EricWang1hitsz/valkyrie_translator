@@ -90,6 +90,7 @@ namespace valkyrie_translator
         std::map<std::string, joint_command> latest_commands;
         bool publishCoreRobotState = true;
         bool publish_est_robot_state = false;
+        bool applySafeties = false;
         bool applyCommands = false;
         bool publish_debug_data = false;
 

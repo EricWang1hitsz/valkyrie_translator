@@ -389,11 +389,6 @@ namespace valkyrie_translator
         limits = limits_search->second;
       }
 
-      
-      
-      
-
-
     // bound the force within our max force limits
     // and ramp down the force to 0 in the 0.1 radians after the joint limit
 
@@ -640,8 +635,18 @@ namespace valkyrie_translator
         {
           std::cerr << "ERROR: handler lcm is not good()" << std::endl;
         }
-        lcm_->subscribe("ROBOT_COMMAND", &LCM2ROSControl_LCMHandler::jointCommandHandler, this);
-        lcm_->subscribe("ROBOT_BEHAVIOR", &LCM2ROSControl_LCMHandler::behaviorHandler, this);
+
+        // set the queue capacity to 1 to reduce latency
+        lcm::Subscription* sub1 = lcm_->subscribe("ROBOT_COMMAND", &LCM2ROSControl_LCMHandler::jointCommandHandler, this);
+
+        lcm::Subscription* sub2 = lcm_->subscribe("ROBOT_BEHAVIOR", &LCM2ROSControl_LCMHandler::behaviorHandler, this);
+
+        bool useShortQueue = true;
+        if(useShortQueue){
+          sub1->setQueueCapacity(1);
+          sub2->setQueueCapacity(1);
+        }
+        
       }
       LCM2ROSControl_LCMHandler::~LCM2ROSControl_LCMHandler() {}
 

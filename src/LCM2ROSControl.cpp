@@ -301,7 +301,7 @@ namespace valkyrie_translator
   void LCM2ROSControl::update(const ros::Time& time, const ros::Duration& period)
   {
     handler_->update();
-    lcm_->handleTimeout(0);
+    lcm_->handleTimeout(0); // I don't think I need to do this
 
     double dt = (time - last_update).toSec();
     last_update = time;
@@ -527,6 +527,8 @@ namespace valkyrie_translator
           status_msg.frequency = 0;
           lcm_->publish("LCM2ROSCONTROL_STATUS", &status_msg);
         }
+
+        lcm_->handleTimeout(0); // make sure we publish out those messages in this command tick. Otherwise we would be waiting a whole command tick.
       }
 
       void LCM2ROSControl::stopping(const ros::Time& time)

@@ -20,6 +20,7 @@
 #include "lcmtypes/bot_core/six_axis_force_torque_array_t.hpp"
 #include "lcmtypes/bot_core/ins_t.hpp"
 #include "lcmtypes/bot_core/joint_angles_t.hpp"
+#include "lcmtypes/drc/utime_t.hpp"
 
 
 namespace valkyrie_translator {
@@ -35,12 +36,19 @@ namespace valkyrie_translator {
 
         void stopping(const ros::Time &time);
 
+        void updateForceTorqueTareValues(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
+                                         const drc::utime_t* msg);
+
+        void publishForceTorqueTareValues(int64_t utime);
+
     protected:
         bool initRequest(hardware_interface::RobotHW *robot_hw,
                          ros::NodeHandle &root_nh, ros::NodeHandle &controller_nh,
                          std::set<std::string> &claimed_resources) override;
 
     private:
+        void initializeLCMSubscriptions();
+
         void publishEstRobotState(int64_t utime);
 
         void publishIMUReadings(int64_t utime);
@@ -53,11 +61,13 @@ namespace valkyrie_translator {
         std::vector<hardware_interface::JointStateHandle> joint_state_handles_;
         std::map<std::string, hardware_interface::ImuSensorHandle> imu_sensor_handles_;
         std::map<std::string, hardware_interface::ForceTorqueSensorHandle> force_torque_handles_;
+        std::map<std::string, std::vector<double>> forceTorqueTaredValueMap;
         std::shared_ptr<lcm::LCM> lcm_;
         unsigned int number_of_joint_interfaces_;
 
         bot_core::joint_state_t core_robot_state_;
         bot_core::robot_state_t est_robot_state_;
+
         std::string core_robot_state_channel_;
 
         bool publish_imu_readings_;
@@ -95,6 +105,8 @@ namespace valkyrie_translator {
             std::cerr << "ERROR: lcm is not good()" << std::endl;
             return false;
         }
+
+        this->initializeLCMSubscriptions();
 
         // Retrieve channel name for the core robot state message (defaults to CORE_ROBOT_STATE)
         if (!controller_nh.getParam("core_robot_state_channel", core_robot_state_channel_))
@@ -205,6 +217,9 @@ namespace valkyrie_translator {
             try {
                 force_torque_handles_.insert(
                         std::make_pair(force_torque_names[i], force_torque_hw->getHandle(force_torque_names[i])));
+
+                // initialize the storing of tared values. Initially all zeros
+                forceTorqueTaredValueMap.insert(std::make_pair(force_torque_names[i], std::vector<double>(6)));
             } catch (const hardware_interface::HardwareInterfaceException& e) {
                 ROS_ERROR_STREAM("Could not retrieve handle for " << force_torque_names[i] << ": " << e.what());
             }
@@ -307,27 +322,83 @@ namespace valkyrie_translator {
         lcm_ft_array_msg.sensors.resize(2);
 
         // l_foot
+        std::vector<double> taredValues = this->forceTorqueTaredValueMap["leftFootSixAxis"];
         lcm_ft_array_msg.sensors[0].utime = utime;
-        lcm_ft_array_msg.sensors[0].force[0] = force_torque_handles_["leftFootSixAxis"].getForce()[0];
-        lcm_ft_array_msg.sensors[0].force[1] = force_torque_handles_["leftFootSixAxis"].getForce()[1];
-        lcm_ft_array_msg.sensors[0].force[2] = force_torque_handles_["leftFootSixAxis"].getForce()[2];
-        lcm_ft_array_msg.sensors[0].moment[0] = force_torque_handles_["leftFootSixAxis"].getTorque()[0];
-        lcm_ft_array_msg.sensors[0].moment[1] = force_torque_handles_["leftFootSixAxis"].getTorque()[1];
-        lcm_ft_array_msg.sensors[0].moment[2] = force_torque_handles_["leftFootSixAxis"].getTorque()[2];
+        lcm_ft_array_msg.sensors[0].force[0] = force_torque_handles_["leftFootSixAxis"].getForce()[0] - taredValues[0];
+        lcm_ft_array_msg.sensors[0].force[1] = force_torque_handles_["leftFootSixAxis"].getForce()[1] - taredValues[1];
+        lcm_ft_array_msg.sensors[0].force[2] = force_torque_handles_["leftFootSixAxis"].getForce()[2] - taredValues[2];
+        lcm_ft_array_msg.sensors[0].moment[0] = force_torque_handles_["leftFootSixAxis"].getTorque()[0] - taredValues[3];
+        lcm_ft_array_msg.sensors[0].moment[1] = force_torque_handles_["leftFootSixAxis"].getTorque()[1] - taredValues[4];
+        lcm_ft_array_msg.sensors[0].moment[2] = force_torque_handles_["leftFootSixAxis"].getTorque()[2] - taredValues[5];
         lcm_ft_array_msg.names[0] = "l_foot";
 
         // r_foot
         lcm_ft_array_msg.sensors[1].utime = utime;
-        lcm_ft_array_msg.sensors[1].force[0] = force_torque_handles_["rightFootSixAxis"].getForce()[0];
-        lcm_ft_array_msg.sensors[1].force[1] = force_torque_handles_["rightFootSixAxis"].getForce()[1];
-        lcm_ft_array_msg.sensors[1].force[2] = force_torque_handles_["rightFootSixAxis"].getForce()[2];
-        lcm_ft_array_msg.sensors[1].moment[0] = force_torque_handles_["rightFootSixAxis"].getTorque()[0];
-        lcm_ft_array_msg.sensors[1].moment[1] = force_torque_handles_["rightFootSixAxis"].getTorque()[1];
-        lcm_ft_array_msg.sensors[1].moment[2] = force_torque_handles_["rightFootSixAxis"].getTorque()[2];
+        lcm_ft_array_msg.sensors[1].force[0] = force_torque_handles_["rightFootSixAxis"].getForce()[0] - taredValues[0];
+        lcm_ft_array_msg.sensors[1].force[1] = force_torque_handles_["rightFootSixAxis"].getForce()[1] - taredValues[1];
+        lcm_ft_array_msg.sensors[1].force[2] = force_torque_handles_["rightFootSixAxis"].getForce()[2] - taredValues[2];
+        lcm_ft_array_msg.sensors[1].moment[0] = force_torque_handles_["rightFootSixAxis"].getTorque()[0] - taredValues[3];
+        lcm_ft_array_msg.sensors[1].moment[1] = force_torque_handles_["rightFootSixAxis"].getTorque()[1] - taredValues[4];
+        lcm_ft_array_msg.sensors[1].moment[2] = force_torque_handles_["rightFootSixAxis"].getTorque()[2] - taredValues[5];
         lcm_ft_array_msg.names[1] = "r_foot";
 
 
         lcm_->publish("FORCE_TORQUE", &lcm_ft_array_msg); 
+    }
+
+
+    void JointStatePublisher::updateForceTorqueTareValues(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
+                                                          const drc::utime_t* msg) {
+
+        std::vector<std::string> ftNameVec = {"leftFootSixAxis", "rightFootSixAxis"};
+
+        for(int i = 0; i < ftNameVec.size(); i++){
+            std::string ftName = ftNameVec[i];
+            hardware_interface::ForceTorqueSensorHandle FTHandle = force_torque_handles_[ftName];
+            std::vector<double> ftTaredValue = forceTorqueTaredValueMap[ftName];
+            ftTaredValue[0] = FTHandle.getForce()[0];
+            ftTaredValue[1] = FTHandle.getForce()[1];
+            ftTaredValue[2] = FTHandle.getForce()[2];
+            ftTaredValue[3] = FTHandle.getTorque()[0];
+            ftTaredValue[4] = FTHandle.getTorque()[1];
+            ftTaredValue[5] = FTHandle.getTorque()[2];
+        }
+
+    }
+
+
+    void JointStatePublisher::publishForceTorqueTareValues(int64_t utime) {
+        bot_core::six_axis_force_torque_array_t msg;
+        msg.utime = utime;
+        msg.num_sensors = 2;
+        msg.sensors.resize(2);
+
+
+        std::vector<std::string> ftNameVec = {"leftFootSixAxis", "rightFootSixAxis"};
+        std::vector<std::string> ftNameMsgVec = {"l_foot", "r_foot"};
+
+        msg.names = ftNameMsgVec;
+
+        for(int i = 0; i < ftNameVec.size(); i++){
+            std::string ftName = ftNameVec[i];
+            std::vector<double> ftTaredValue = forceTorqueTaredValueMap[ftName];
+            msg.sensors[i].force[0] = ftTaredValue[0];
+            msg.sensors[i].force[1] = ftTaredValue[1];
+            msg.sensors[i].force[2] = ftTaredValue[2];
+
+            msg.sensors[i].moment[0] = ftTaredValue[3];
+            msg.sensors[i].moment[1] = ftTaredValue[4];
+            msg.sensors[i].moment[2] = ftTaredValue[5];
+
+        }
+
+
+        lcm_->publish("FOOT_SENSOR_TARED_VAL", &msg);
+    }
+
+
+    void JointStatePublisher::initializeLCMSubscriptions() {
+        lcm_->subscribe("TARE_FOOT_SENSORS", &JointStatePublisher::updateForceTorqueTareValues, this);
     }
 
     void JointStatePublisher::stopping(const ros::Time &time) { }

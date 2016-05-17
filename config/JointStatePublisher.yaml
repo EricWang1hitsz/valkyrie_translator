@@ -4,3 +4,4 @@ JointStatePublisher:
     publish_separate_force_torque_readings: true
     publish_est_robot_state: false
     core_robot_state_channel: "CORE_ROBOT_STATE"
+    publish_tare_value: true

@@ -7,6 +7,7 @@
 #include <vector>
 #include <set>
 #include <memory>
+#include <chrono>
 
 #include <iostream>
 #include <boost/asio.hpp>
@@ -47,8 +48,7 @@ namespace valkyrie_translator {
         void updateForceTorqueTareValues(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
                                          const drc::utime_t* msg);
 
-        void publishForceTorqueTareValues(const boost::system::error_code& /*e*/,
-                                          boost::asio::deadline_timer* t);
+        void publishForceTorqueTareValues(int64_t utime);
 
     protected:
         bool initRequest(hardware_interface::RobotHW *robot_hw,
@@ -66,7 +66,7 @@ namespace valkyrie_translator {
 
         void publishCoreRobotState(int64_t utime);
 
-        void setupTaredForceTorquePublishing();
+        // void setupTaredForceTorquePublishing();
 
         std::vector<std::string> joint_names_;
         std::vector<hardware_interface::JointStateHandle> joint_state_handles_;
@@ -81,9 +81,12 @@ namespace valkyrie_translator {
 
         std::string core_robot_state_channel_;
 
+        double lastTareValuePublishTime = 0;
+
         bool publish_imu_readings_;
         bool publish_separate_force_torque_readings_;
         bool publish_est_robot_state_;
+        bool publishTareValue;
     };
 
 
@@ -117,6 +120,7 @@ namespace valkyrie_translator {
             return false;
         }
 
+        // setup the LCM subscriptions. Right now only for TARE_FOOT_SENSORS
         this->initializeLCMSubscriptions();
 
         // Retrieve channel name for the core robot state message (defaults to CORE_ROBOT_STATE)
@@ -236,8 +240,10 @@ namespace valkyrie_translator {
             }
         }
 
-        this->setupTaredForceTorquePublishing();
 
+        controller_nh.getParam("publish_tare_value", publishTareValue);
+
+        
         state_ = INITIALIZED;
         return true;
     }
@@ -258,6 +264,12 @@ namespace valkyrie_translator {
 
         if (publish_separate_force_torque_readings_)
             publishForceTorqueReadings(utime);
+
+        if((time.toSec() - lastTareValuePublishTime) > 1){
+            publishForceTorqueTareValues(utime);
+            lastTareValuePublishTime = time.toSec();
+        }
+
     }
 
     void JointStatePublisher::publishEstRobotState(int64_t utime) {
@@ -335,24 +347,25 @@ namespace valkyrie_translator {
         lcm_ft_array_msg.sensors.resize(2);
 
         // l_foot
-        std::vector<double> taredValues = this->forceTorqueTaredValueMap["leftFootSixAxis"];
+        std::vector<double>& taredValuesLeft = this->forceTorqueTaredValueMap["leftFootSixAxis"];
         lcm_ft_array_msg.sensors[0].utime = utime;
-        lcm_ft_array_msg.sensors[0].force[0] = force_torque_handles_["leftFootSixAxis"].getForce()[0] - taredValues[0];
-        lcm_ft_array_msg.sensors[0].force[1] = force_torque_handles_["leftFootSixAxis"].getForce()[1] - taredValues[1];
-        lcm_ft_array_msg.sensors[0].force[2] = force_torque_handles_["leftFootSixAxis"].getForce()[2] - taredValues[2];
-        lcm_ft_array_msg.sensors[0].moment[0] = force_torque_handles_["leftFootSixAxis"].getTorque()[0] - taredValues[3];
-        lcm_ft_array_msg.sensors[0].moment[1] = force_torque_handles_["leftFootSixAxis"].getTorque()[1] - taredValues[4];
-        lcm_ft_array_msg.sensors[0].moment[2] = force_torque_handles_["leftFootSixAxis"].getTorque()[2] - taredValues[5];
+        lcm_ft_array_msg.sensors[0].force[0] = force_torque_handles_["leftFootSixAxis"].getForce()[0] - taredValuesLeft[0];
+        lcm_ft_array_msg.sensors[0].force[1] = force_torque_handles_["leftFootSixAxis"].getForce()[1] - taredValuesLeft[1];
+        lcm_ft_array_msg.sensors[0].force[2] = force_torque_handles_["leftFootSixAxis"].getForce()[2] - taredValuesLeft[2];
+        lcm_ft_array_msg.sensors[0].moment[0] = force_torque_handles_["leftFootSixAxis"].getTorque()[0] - taredValuesLeft[3];
+        lcm_ft_array_msg.sensors[0].moment[1] = force_torque_handles_["leftFootSixAxis"].getTorque()[1] - taredValuesLeft[4];
+        lcm_ft_array_msg.sensors[0].moment[2] = force_torque_handles_["leftFootSixAxis"].getTorque()[2] - taredValuesLeft[5];
         lcm_ft_array_msg.names[0] = "l_foot";
 
         // r_foot
+        std::vector<double>& taredValuesRight = this->forceTorqueTaredValueMap["rightFootSixAxis"];
         lcm_ft_array_msg.sensors[1].utime = utime;
-        lcm_ft_array_msg.sensors[1].force[0] = force_torque_handles_["rightFootSixAxis"].getForce()[0] - taredValues[0];
-        lcm_ft_array_msg.sensors[1].force[1] = force_torque_handles_["rightFootSixAxis"].getForce()[1] - taredValues[1];
-        lcm_ft_array_msg.sensors[1].force[2] = force_torque_handles_["rightFootSixAxis"].getForce()[2] - taredValues[2];
-        lcm_ft_array_msg.sensors[1].moment[0] = force_torque_handles_["rightFootSixAxis"].getTorque()[0] - taredValues[3];
-        lcm_ft_array_msg.sensors[1].moment[1] = force_torque_handles_["rightFootSixAxis"].getTorque()[1] - taredValues[4];
-        lcm_ft_array_msg.sensors[1].moment[2] = force_torque_handles_["rightFootSixAxis"].getTorque()[2] - taredValues[5];
+        lcm_ft_array_msg.sensors[1].force[0] = force_torque_handles_["rightFootSixAxis"].getForce()[0] - taredValuesRight[0];
+        lcm_ft_array_msg.sensors[1].force[1] = force_torque_handles_["rightFootSixAxis"].getForce()[1] - taredValuesRight[1];
+        lcm_ft_array_msg.sensors[1].force[2] = force_torque_handles_["rightFootSixAxis"].getForce()[2] - taredValuesRight[2];
+        lcm_ft_array_msg.sensors[1].moment[0] = force_torque_handles_["rightFootSixAxis"].getTorque()[0] - taredValuesRight[3];
+        lcm_ft_array_msg.sensors[1].moment[1] = force_torque_handles_["rightFootSixAxis"].getTorque()[1] - taredValuesRight[4];
+        lcm_ft_array_msg.sensors[1].moment[2] = force_torque_handles_["rightFootSixAxis"].getTorque()[2] - taredValuesRight[5];
         lcm_ft_array_msg.names[1] = "r_foot";
 
 
@@ -367,22 +380,23 @@ namespace valkyrie_translator {
 
         for(int i = 0; i < ftNameVec.size(); i++){
             std::string ftName = ftNameVec[i];
-            hardware_interface::ForceTorqueSensorHandle FTHandle = force_torque_handles_[ftName];
-            std::vector<double> ftTaredValue = forceTorqueTaredValueMap[ftName];
+            hardware_interface::ForceTorqueSensorHandle & FTHandle = force_torque_handles_[ftName];
+            std::vector<double>& ftTaredValue = forceTorqueTaredValueMap[ftName];
             ftTaredValue[0] = FTHandle.getForce()[0];
             ftTaredValue[1] = FTHandle.getForce()[1];
             ftTaredValue[2] = FTHandle.getForce()[2];
+
             ftTaredValue[3] = FTHandle.getTorque()[0];
             ftTaredValue[4] = FTHandle.getTorque()[1];
             ftTaredValue[5] = FTHandle.getTorque()[2];
         }
 
+        std::cout << "got a tare msg, updating tare values for foot force torque" << std::endl;
+
     }
 
 
-    void JointStatePublisher::publishForceTorqueTareValues(const boost::system::error_code& /*e*/,
-                                                           boost::asio::deadline_timer* t) {
-        int64_t utime = core_robot_state_.utime; // just use the utime from the last core robot state msg.
+    void JointStatePublisher::publishForceTorqueTareValues(int64_t utime) {
         bot_core::six_axis_force_torque_array_t msg;
         msg.utime = utime;
         msg.num_sensors = 2;
@@ -396,7 +410,7 @@ namespace valkyrie_translator {
 
         for(int i = 0; i < ftNameVec.size(); i++){
             std::string ftName = ftNameVec[i];
-            std::vector<double> ftTaredValue = forceTorqueTaredValueMap[ftName];
+            std::vector<double>& ftTaredValue = forceTorqueTaredValueMap[ftName];
             msg.sensors[i].force[0] = ftTaredValue[0];
             msg.sensors[i].force[1] = ftTaredValue[1];
             msg.sensors[i].force[2] = ftTaredValue[2];
@@ -409,11 +423,6 @@ namespace valkyrie_translator {
 
         lcm_->publish("FOOT_SENSOR_TARED_VAL", &msg);
 
-        //reset the timer
-        t->expires_at(t->expires_at() + boost::posix_time::seconds(1));
-        t->async_wait(boost::bind(&JointStatePublisher::publishForceTorqueTareValues, this,
-                                  boost::asio::placeholders::error, t));
-
     }
 
 
@@ -423,18 +432,18 @@ namespace valkyrie_translator {
 
 
     // publish the tared FT values once a second
-    void JointStatePublisher::setupTaredForceTorquePublishing() {
-        boost::asio::io_service io;
-        boost::asio::deadline_timer t(io, boost::posix_time::seconds(1));
+    // void JointStatePublisher::setupTaredForceTorquePublishing() {
+    //     boost::asio::io_service io;
+    //     boost::asio::deadline_timer t(io, boost::posix_time::seconds(1));
 
 
-        auto boundFun = boost::bind(&JointStatePublisher::publishForceTorqueTareValues, this,
-                                    boost::asio::placeholders::error, &t);
+    //     auto boundFun = boost::bind(&JointStatePublisher::publishForceTorqueTareValues, this,
+    //                                 boost::asio::placeholders::error, &t);
 
-        t.async_wait(boundFun);
-        io.run();
+    //     t.async_wait(boundFun);
+    //     io.run();
 
-    }
+    // }
 
     void JointStatePublisher::stopping(const ros::Time &time) { }
 

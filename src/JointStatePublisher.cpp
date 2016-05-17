@@ -8,6 +8,11 @@
 #include <set>
 #include <memory>
 
+#include <iostream>
+#include <boost/asio.hpp>
+#include <boost/bind.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
+
 #include <controller_interface/controller.h>
 #include <hardware_interface/joint_state_interface.h>
 #include <hardware_interface/imu_sensor_interface.h>
@@ -22,6 +27,9 @@
 #include "lcmtypes/bot_core/joint_angles_t.hpp"
 #include "lcmtypes/drc/utime_t.hpp"
 
+void print(){
+    std::cout << "Hello world " << std::endl;
+}
 
 namespace valkyrie_translator {
     class JointStatePublisher;
@@ -39,7 +47,8 @@ namespace valkyrie_translator {
         void updateForceTorqueTareValues(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
                                          const drc::utime_t* msg);
 
-        void publishForceTorqueTareValues(int64_t utime);
+        void publishForceTorqueTareValues(const boost::system::error_code& /*e*/,
+                                          boost::asio::deadline_timer* t);
 
     protected:
         bool initRequest(hardware_interface::RobotHW *robot_hw,
@@ -56,6 +65,8 @@ namespace valkyrie_translator {
         void publishForceTorqueReadings(int64_t utime);
 
         void publishCoreRobotState(int64_t utime);
+
+        void setupTaredForceTorquePublishing();
 
         std::vector<std::string> joint_names_;
         std::vector<hardware_interface::JointStateHandle> joint_state_handles_;
@@ -225,6 +236,8 @@ namespace valkyrie_translator {
             }
         }
 
+        this->setupTaredForceTorquePublishing();
+
         state_ = INITIALIZED;
         return true;
     }
@@ -367,7 +380,9 @@ namespace valkyrie_translator {
     }
 
 
-    void JointStatePublisher::publishForceTorqueTareValues(int64_t utime) {
+    void JointStatePublisher::publishForceTorqueTareValues(const boost::system::error_code& /*e*/,
+                                                           boost::asio::deadline_timer* t) {
+        int64_t utime = core_robot_state_.utime; // just use the utime from the last core robot state msg.
         bot_core::six_axis_force_torque_array_t msg;
         msg.utime = utime;
         msg.num_sensors = 2;
@@ -392,13 +407,33 @@ namespace valkyrie_translator {
 
         }
 
-
         lcm_->publish("FOOT_SENSOR_TARED_VAL", &msg);
+
+        //reset the timer
+        t->expires_at(t->expires_at() + boost::posix_time::seconds(1));
+        t->async_wait(boost::bind(&JointStatePublisher::publishForceTorqueTareValues, this,
+                                  boost::asio::placeholders::error, t));
+
     }
 
 
     void JointStatePublisher::initializeLCMSubscriptions() {
         lcm_->subscribe("TARE_FOOT_SENSORS", &JointStatePublisher::updateForceTorqueTareValues, this);
+    }
+
+
+    // publish the tared FT values once a second
+    void JointStatePublisher::setupTaredForceTorquePublishing() {
+        boost::asio::io_service io;
+        boost::asio::deadline_timer t(io, boost::posix_time::seconds(1));
+
+
+        auto boundFun = boost::bind(&JointStatePublisher::publishForceTorqueTareValues, this,
+                                    boost::asio::placeholders::error, &t);
+
+        t.async_wait(boundFun);
+        io.run();
+
     }
 
     void JointStatePublisher::stopping(const ros::Time &time) { }

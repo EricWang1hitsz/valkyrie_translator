@@ -9,11 +9,6 @@
 #include <memory>
 #include <chrono>
 
-#include <iostream>
-#include <boost/asio.hpp>
-#include <boost/bind.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
-
 #include <controller_interface/controller.h>
 #include <hardware_interface/joint_state_interface.h>
 #include <hardware_interface/imu_sensor_interface.h>
@@ -28,9 +23,7 @@
 #include "lcmtypes/bot_core/joint_angles_t.hpp"
 #include "lcmtypes/drc/utime_t.hpp"
 
-void print(){
-    std::cout << "Hello world " << std::endl;
-}
+
 
 namespace valkyrie_translator {
     class JointStatePublisher;
@@ -241,9 +234,6 @@ namespace valkyrie_translator {
         }
 
 
-        controller_nh.getParam("publish_tare_value", publishTareValue);
-
-        
         state_ = INITIALIZED;
         return true;
     }
@@ -430,20 +420,6 @@ namespace valkyrie_translator {
         lcm_->subscribe("TARE_FOOT_SENSORS", &JointStatePublisher::updateForceTorqueTareValues, this);
     }
 
-
-    // publish the tared FT values once a second
-    // void JointStatePublisher::setupTaredForceTorquePublishing() {
-    //     boost::asio::io_service io;
-    //     boost::asio::deadline_timer t(io, boost::posix_time::seconds(1));
-
-
-    //     auto boundFun = boost::bind(&JointStatePublisher::publishForceTorqueTareValues, this,
-    //                                 boost::asio::placeholders::error, &t);
-
-    //     t.async_wait(boundFun);
-    //     io.run();
-
-    // }
 
     void JointStatePublisher::stopping(const ros::Time &time) { }
 

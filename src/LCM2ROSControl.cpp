@@ -528,7 +528,6 @@ namespace valkyrie_translator
           lcm_->publish("LCM2ROSCONTROL_STATUS", &status_msg);
         }
 
-        lcm_->handleTimeout(0); // make sure we publish out those messages in this command tick. Otherwise we would be waiting a whole command tick.
       }
 
       void LCM2ROSControl::stopping(const ros::Time& time)

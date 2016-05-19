@@ -19,19 +19,23 @@
 #include "lcmtypes/bot_core/ins_t.hpp"
 #include "lcmtypes/bot_core/joint_angles_t.hpp"
 #include "lcmtypes/bot_core/atlas_command_t.hpp"
+#include "lcmtypes/drc/behavior_transition_t.hpp"
 
 #include <set>
 #include <string>
 #include <vector>
+#include <chrono>
 
 namespace valkyrie_translator
 {
 
-   typedef struct _joint_command {
-    double position;
-    double velocity;
-    double effort;
+  enum class Behavior {
+    FREEZE,
+    POSITION_CONTROL,
+    NORMAL
+  };
 
+  struct joint_gains {
     double k_q_p; // corresponds to kp_position in drcsim API
     double k_q_i; // corresponds to ki_position in drcsim API
     double k_qd_p; // corresponds to kp_velocity in drcsim API
@@ -40,7 +44,15 @@ namespace valkyrie_translator
     double ff_qd_d;
     double ff_f_d;
     double ff_const;
-   } joint_command;
+  };
+
+   struct joint_command {
+    double position;
+    double velocity;
+    double effort;
+
+    joint_gains gains;
+   };
 
    class LCM2ROSControl;
 
@@ -53,6 +65,8 @@ namespace valkyrie_translator
         virtual ~LCM2ROSControl_LCMHandler();
         void jointCommandHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
                                const bot_core::atlas_command_t* msg);
+        void behaviorHandler(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
+                             const drc::behavior_transition_t* msg);
         void update();
    private:
         LCM2ROSControl& parent_;
@@ -76,7 +90,10 @@ namespace valkyrie_translator
         std::map<std::string, joint_command> latest_commands;
         bool publishCoreRobotState = true;
         bool publish_est_robot_state = false;
+        bool applySafeties = false;
         bool applyCommands = false;
+        bool publish_debug_data = false;
+
 
         double FORCE_CONTROL_ALLOWABLE_POSITION_ERR_BOUND = 0.1;
         double FORCE_CONTROL_MAX_CHANGE = 100.0;
@@ -85,6 +102,7 @@ namespace valkyrie_translator
         double DEFAULT_MAX_EFFORT = 1000.0;
 
         std::map<std::string, joint_limits_interface::JointLimits> joint_limits;
+        void transitionTo(Behavior new_behavior, ros::Duration transition_duration);
 
    protected:
         virtual bool initRequest(hardware_interface::RobotHW* robot_hw,
@@ -101,6 +119,19 @@ namespace valkyrie_translator
         std::map<std::string, hardware_interface::ForceTorqueSensorHandle> forceTorqueHandles;
 
         ros::Time last_update;
+
+        Behavior current_behavior = Behavior::FREEZE;
+        Behavior previous_behavior = Behavior::FREEZE;
+        std::map<std::string, double> latched_positions;
+        ros::Time last_transition_start_time;
+        ros::Duration last_transition_duration;
+        std::map<Behavior, std::map<std::string, joint_gains> > behavior_gain_overrides;
+
+        void latchCurrentPositions();
+        bool loadBehaviorGainOverrides(const std::vector<std::string>& effort_names, const ros::NodeHandle& controller_nh);
+        double commandPosition(const std::string& joint_name, const joint_command& command, const Behavior& behavior);
+        double commandEffort(const std::string& joint_name, const hardware_interface::JointHandle& joint_handle, const joint_command& command, const double dt, const Behavior& behavior);
+        double currentTransitionRatio();
    };
 }
 #endif

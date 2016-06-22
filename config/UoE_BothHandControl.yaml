@@ -7,6 +7,12 @@ HandPositionGoalController:
     control_state_channel: "HAND_STATE"
     control_state_publish_frequency: 50
     joints: # Position-commanded joints
+        - leftIndexFingerMotorPitch1
+        - leftMiddleFingerMotorPitch1
+        - leftPinkyMotorPitch1
+        - leftThumbMotorPitch1
+        - leftThumbMotorPitch2
+        # - leftThumbMotorRoll
         - rightIndexFingerMotorPitch1
         - rightMiddleFingerMotorPitch1
         - rightPinkyMotorPitch1

@@ -12,7 +12,7 @@ HandPositionGoalController:
          - leftPinkyMotorPitch1
          - leftThumbMotorPitch1
          - leftThumbMotorPitch2
-        # - leftThumbMotorRoll
+         - leftThumbMotorRoll
         #- rightIndexFingerMotorPitch1
         #- rightMiddleFingerMotorPitch1
         #- rightPinkyMotorPitch1

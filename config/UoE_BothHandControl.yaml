@@ -39,8 +39,8 @@ HandPositionGoalController:
             max_position: 2.0
         leftThumbMotorPitch2:
             has_position_limits: true
-            min_position: 0.5
-            max_position: 2.0
+            min_position: 0.3
+            max_position: 1.2
         leftThumbMotorRoll:
             has_position_limits: true
             min_position: 0.5

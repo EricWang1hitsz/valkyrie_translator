@@ -22,6 +22,7 @@
 #include "lcmtypes/bot_core/ins_t.hpp"
 #include "lcmtypes/bot_core/joint_angles_t.hpp"
 #include "lcmtypes/drc/utime_t.hpp"
+#include "lcmtypes/drc/string_t.hpp"
 
 
 
@@ -39,7 +40,7 @@ namespace valkyrie_translator {
         void stopping(const ros::Time &time);
 
         void updateForceTorqueTareValues(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
-                                         const drc::utime_t* msg);
+                                         const drc::string_t* msg);
 
         void publishForceTorqueTareValues(int64_t utime);
 
@@ -364,9 +365,24 @@ namespace valkyrie_translator {
 
 
     void JointStatePublisher::updateForceTorqueTareValues(const lcm::ReceiveBuffer* rbuf, const std::string &channel,
-                                                          const drc::utime_t* msg) {
+                                                          const drc::string_t* msg) {
 
-        std::vector<std::string> ftNameVec = {"leftFootSixAxis", "rightFootSixAxis"};
+
+        std::vector<std::string> ftNameVec;
+
+        if (msg->data == "both"){
+            ftNameVec.push_back("leftFootSixAxis");
+            ftNameVec.push_back("rightFootSixAxis");
+            std::cout << "taring LEFT and RIGHT 6-axis force torque sensors" << std::endl;
+        } else if (msg->data == "left"){
+            ftNameVec.push_back("leftFootSixAxis");
+            std::cout << "taring LEFT 6-axis force torque sensors" << std::endl;
+        } else if (msg->data == "right"){
+            ftNameVec.push_back("rightFootSixAxis");
+            std::cout << "taring RIGHT 6-axis force torque sensors" << std::endl;
+        } else{
+            std::cout << "got an improperly formatted tare msg, doing nothing" << std::endl;
+        }
 
         for(int i = 0; i < ftNameVec.size(); i++){
             std::string ftName = ftNameVec[i];
@@ -380,9 +396,6 @@ namespace valkyrie_translator {
             ftTaredValue[4] = FTHandle.getTorque()[1];
             ftTaredValue[5] = FTHandle.getTorque()[2];
         }
-
-        std::cout << "got a tare msg, updating tare values for foot force torque" << std::endl;
-
     }
 
 

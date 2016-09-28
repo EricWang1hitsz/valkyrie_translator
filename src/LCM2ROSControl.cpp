@@ -578,6 +578,12 @@ namespace valkyrie_translator
           f_desired = 0.0;
           gains = behavior_gain_overrides[Behavior::FREEZE][joint_name];
           break;
+          case Behavior::STAND_PREP_HOLD:
+          q_desired = stand_prep_command[joint_name].position;
+          qd_desired = 0.0;
+          f_desired = 0.0;
+          gains = behavior_gain_overrides[Behavior::POSITION_CONTROL][joint_name];
+          break;
           default:
           ROS_WARN_STREAM("Unknown behavior, treating it as FREEZE");
           q_desired = latched_positions[joint_name];
@@ -618,6 +624,11 @@ namespace valkyrie_translator
         last_transition_duration = transition_duration;
         previous_behavior = current_behavior;
         current_behavior = new_behavior;
+
+        // store current commands if STAND_PREP_HOLD is the new behavior
+        if(current_behavior == Behavior::STAND_PREP_HOLD){
+          this->storeCurrentCommand();
+        }
       }
 
       void LCM2ROSControl::latchCurrentPositions() {
@@ -627,6 +638,10 @@ namespace valkyrie_translator
         for (auto iter = effortJointHandles.begin(); iter != effortJointHandles.end(); ++iter) {
           latched_positions[iter->first] = iter->second.getPosition();
         }
+      }
+
+      void LCM2ROSControl::storeCurrentCommand(){
+        stand_prep_command = std::map<std::string, joint_command>(latest_commands.begin(), latest_commands.end());
       }
 
 
@@ -691,6 +706,9 @@ namespace valkyrie_translator
           break;
           case msg->NORMAL:
           parent_.transitionTo(Behavior::NORMAL, duration);
+          break;
+          case msg->STAND_PREP_HOLD:
+          parent_.transitionTo(Behavior::STAND_PREP_HOLD, duration);
           break;
           default:
           ROS_WARN_STREAM("Unknown behavior: " << msg->behavior << ", treating it as FREEZE");

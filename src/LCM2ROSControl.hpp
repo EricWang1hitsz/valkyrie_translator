@@ -32,7 +32,8 @@ namespace valkyrie_translator
   enum class Behavior {
     FREEZE,
     POSITION_CONTROL,
-    NORMAL
+    NORMAL,
+    STAND_PREP_HOLD
   };
 
   struct joint_gains {
@@ -88,6 +89,7 @@ namespace valkyrie_translator
         // Public so it can be modified by the LCMHandler. Should eventually create
         // a friend class arrangement to make this private again.
         std::map<std::string, joint_command> latest_commands;
+        std::map<std::string, joint_command> stand_prep_command;
         bool publishCoreRobotState = true;
         bool publish_est_robot_state = false;
         bool applySafeties = false;
@@ -128,6 +130,7 @@ namespace valkyrie_translator
         std::map<Behavior, std::map<std::string, joint_gains> > behavior_gain_overrides;
 
         void latchCurrentPositions();
+        void storeCurrentCommand();
         bool loadBehaviorGainOverrides(const std::vector<std::string>& effort_names, const ros::NodeHandle& controller_nh);
         double commandPosition(const std::string& joint_name, const joint_command& command, const Behavior& behavior);
         double commandEffort(const std::string& joint_name, const hardware_interface::JointHandle& joint_handle, const joint_command& command, const double dt, const Behavior& behavior);

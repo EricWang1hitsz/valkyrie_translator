@@ -153,7 +153,7 @@ namespace valkyrie_translator {
             control_state_publish_frequency_ = 500;
 
         control_state_publish_every_tics_ = static_cast<int>(std::floor(500 / control_state_publish_frequency_));
-        ROS_INFO_STREAM("Publishing control state on LCM channel " << command_channel_ << " with " << control_state_publish_frequency_ << " Hz (every " << control_state_publish_every_tics_ << " tics)");
+        ROS_INFO_STREAM("Publishing control state on LCM channel " << control_state_channel_ << " with " << control_state_publish_frequency_ << " Hz (every " << control_state_publish_every_tics_ << " tics)");
         control_state_publish_counter_ = 0;
 
         // setup LCM
@@ -254,7 +254,7 @@ namespace valkyrie_translator {
 
     void JointPositionGoalController::update(const ros::Time &time, const ros::Duration &period) {
         handler_->update();
-        lcm_->handleTimeout(0);
+        //lcm_->handleTimeout(0);
 
         double dt = (time - last_update_).toSec();
         int64_t utime = (int64_t) (time.toSec() * 1e6);
@@ -414,6 +414,7 @@ namespace valkyrie_translator {
 
     void JointPositionGoalController_LCMHandler::jointPositionGoalHandler(const lcm::ReceiveBuffer *rbuf,
                                                                           const std::string &channel,
+
                                                                           const bot_core::joint_angles_t *msg) {
         // Reset q_move_time_
         parent_.q_move_time_ = 0.0;

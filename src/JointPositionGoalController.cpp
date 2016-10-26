@@ -413,7 +413,6 @@ namespace valkyrie_translator {
 
     void JointPositionGoalController_LCMHandler::jointPositionGoalHandler(const lcm::ReceiveBuffer *rbuf,
                                                                           const std::string &channel,
-
                                                                           const bot_core::joint_angles_t *msg) {
         // Reset q_move_time_
         parent_.q_move_time_ = 0.0;

@@ -12,7 +12,7 @@ HandPositionGoalController:
         - rightPinkyMotorPitch1
         - rightThumbMotorPitch1
         - rightThumbMotorPitch2
-        # - rightThumbMotorRoll
+        - rightThumbMotorRoll
     joint_velocity_limit: 0.262 # rad/s
     joint_limits:
         leftIndexFingerMotorPitch1:

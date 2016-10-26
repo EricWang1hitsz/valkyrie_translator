@@ -254,7 +254,6 @@ namespace valkyrie_translator {
 
     void JointPositionGoalController::update(const ros::Time &time, const ros::Duration &period) {
         handler_->update();
-        //lcm_->handleTimeout(0);
 
         double dt = (time - last_update_).toSec();
         int64_t utime = (int64_t) (time.toSec() * 1e6);

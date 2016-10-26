@@ -237,7 +237,15 @@ namespace valkyrie_translator {
         q_move_time_ = 0;
 
         auto position_hw_claims = position_hw->getClaims();
-        claimed_resources.insert(position_hw_claims.begin(), position_hw_claims.end());
+        try
+        {
+            claimed_resources.insert(position_hw_claims.begin(), position_hw_claims.end());
+        }
+        catch (const hardware_interface::HardwareInterfaceException& e)
+        {
+            ROS_ERROR_STREAM("Could not claim joints!");
+        }
+
         position_hw->clearClaims();
 
         // success
@@ -359,6 +367,7 @@ namespace valkyrie_translator {
 
         unsigned int positionJointIndex = 0;
         for (auto const &joint_name : joint_names_) {
+            if(positionJointIndex>=number_of_joint_interfaces_) break;
             lcm_pose_msg.joint_name[positionJointIndex] = joint_name;
 
             if (commands_modulate_on_joint_limits_range_){            
@@ -388,6 +397,7 @@ namespace valkyrie_translator {
 
         unsigned int positionJointIndex = 0;
         for (auto const &joint_name : joint_names_) {
+            if(positionJointIndex>=number_of_joint_interfaces_) break;
             lcm_commanded_msg.joint_name[positionJointIndex] = joint_name;
             lcm_commanded_msg.joint_position[positionJointIndex] = static_cast<float>(q_last_commanded_[joint_name]);
             positionJointIndex++;

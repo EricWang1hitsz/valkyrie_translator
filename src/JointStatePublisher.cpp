@@ -178,42 +178,8 @@ namespace valkyrie_translator {
             }
         }
 
-        // Retrieve parameter whether to publish EST_ROBOT_STATE (robot_state_t)
-        if (!controller_nh.getParam("publish_est_robot_state", publish_est_robot_state_))
-            publish_est_robot_state_ = true;
-        ROS_INFO_STREAM("Publishing EST_ROBOT_STATE: " << std::to_string(publish_imu_readings_));
-
-        // Retrieve parameter whether to publish IMU sensor readings
-        if (!controller_nh.getParam("publish_imu_readings", publish_imu_readings_))
-            publish_imu_readings_ = true;
-        ROS_INFO_STREAM("Publishing IMU readings: " << std::to_string(publish_imu_readings_));
-
-        if (publish_imu_readings_) {
-            // Retrieve the IMU sensor interface
-            hardware_interface::ImuSensorInterface *imu_hw = robot_hw->get<hardware_interface::ImuSensorInterface>();
-            if (!imu_hw) {
-                ROS_ERROR(
-                        "This controller requires a hardware interface of type hardware_interface::ImuSensorInterface.");
-                return false;
-            }
-
-            const std::vector<std::string> &imu_names = imu_hw->getNames();
-            for (unsigned int i = 0; i < imu_names.size(); i++) {
-                try {
-                    imu_sensor_handles_.insert(std::make_pair(imu_names[i], imu_hw->getHandle(imu_names[i])));
-                } catch (const hardware_interface::HardwareInterfaceException& e) {
-                    ROS_ERROR_STREAM("Could not retrieve handle for " << imu_names[i] << ": " << e.what());
-                }
-            }
-        }
-
-        // Retrieve parameter whether to publish separate force-torque sensor readings in addition to EST_ROBOT_STATE
-        if (!controller_nh.getParam("publish_separate_force_torque_readings", publish_separate_force_torque_readings_))
-            publish_separate_force_torque_readings_ = false;
-        ROS_INFO_STREAM("Publishing separate FORCE_TORQUE readings: " <<
-                        std::to_string(publish_separate_force_torque_readings_));
-
         // Retrieve the force torque sensor interface
+        publishTareValue = true;
         hardware_interface::ForceTorqueSensorInterface *force_torque_hw = robot_hw->get<hardware_interface::ForceTorqueSensorInterface>();
         if (!force_torque_hw) {
             ROS_ERROR(
@@ -233,6 +199,50 @@ namespace valkyrie_translator {
                 ROS_ERROR_STREAM("Could not retrieve handle for " << force_torque_names[i] << ": " << e.what());
             }
         }
+
+        // Retrieve parameter whether to publish EST_ROBOT_STATE (robot_state_t)
+        if (!controller_nh.getParam("publish_est_robot_state", publish_est_robot_state_))
+            publish_est_robot_state_ = true;
+        if(force_torque_names.size()==0)
+        {
+            publishTareValue = false;
+            publish_est_robot_state_ = false;
+        }
+        ROS_INFO_STREAM("Publishing EST_ROBOT_STATE: " << std::to_string(publish_imu_readings_));
+
+        // Retrieve parameter whether to publish IMU sensor readings
+        if (!controller_nh.getParam("publish_imu_readings", publish_imu_readings_))
+            publish_imu_readings_ = true;
+        ROS_INFO_STREAM("Publishing IMU readings: " << std::to_string(publish_imu_readings_));
+
+        if (publish_imu_readings_) {
+            // Retrieve the IMU sensor interface
+            hardware_interface::ImuSensorInterface *imu_hw = robot_hw->get<hardware_interface::ImuSensorInterface>();
+            if (!imu_hw) {
+                ROS_ERROR(
+                        "This controller requires a hardware interface of type hardware_interface::ImuSensorInterface.");
+                return false;
+            }
+
+            const std::vector<std::string> &imu_names = imu_hw->getNames();
+            if(imu_names.size()==0) publish_imu_readings_=false;
+
+            for (unsigned int i = 0; i < imu_names.size(); i++) {
+                try {
+                    imu_sensor_handles_.insert(std::make_pair(imu_names[i], imu_hw->getHandle(imu_names[i])));
+                } catch (const hardware_interface::HardwareInterfaceException& e) {
+                    ROS_ERROR_STREAM("Could not retrieve handle for " << imu_names[i] << ": " << e.what());
+                }
+            }
+        }
+
+        // Retrieve parameter whether to publish separate force-torque sensor readings in addition to EST_ROBOT_STATE
+        if (!controller_nh.getParam("publish_separate_force_torque_readings", publish_separate_force_torque_readings_))
+            publish_separate_force_torque_readings_ = false;
+        if(force_torque_names.size()==0) publish_separate_force_torque_readings_ = false;
+        ROS_INFO_STREAM("Publishing separate FORCE_TORQUE readings: " <<
+                        std::to_string(publish_separate_force_torque_readings_));
+
 
 
         state_ = INITIALIZED;
@@ -257,7 +267,7 @@ namespace valkyrie_translator {
             publishForceTorqueReadings(utime);
 
         if((time.toSec() - lastTareValuePublishTime) > 1){
-            publishForceTorqueTareValues(utime);
+            if(publishTareValue) publishForceTorqueTareValues(utime);
             lastTareValuePublishTime = time.toSec();
         }
 

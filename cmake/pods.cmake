@@ -38,6 +38,9 @@
 #   add_library(perception detector.h sensor.h)
 #   pods_install_headers(detector.h sensor.h DESTINATION perception)
 #
+
+set(ENV{PKG_CONFIG_PATH} $ENV{DRC_BASE}/software/build/lib/pkgconfig:$ENV{DISTRO_BASE}/build/lib/pkgconfig:$ENV{PKG_CONFIG_PATH})
+
 function(pods_install_headers)
     list(GET ARGV -2 checkword)
     if(NOT checkword STREQUAL DESTINATION)

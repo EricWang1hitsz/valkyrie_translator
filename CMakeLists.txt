@@ -2,10 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 # needed for string arrays
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wno-deprecated-declarations")
 
-if (NOT COMMAND pods_use_pkg_config_packages)
-  include(cmake/pods.cmake)
-endif()
-set(POD_NAME valkyrie_translator)
+
 
 project(valkyrie_translator)
 
@@ -14,14 +11,16 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   pluginlib
   roslint
+  pods
 )
 
 catkin_package(
   LIBRARIES LCM2ROSControl JointPositionGoalController JointStatePublisher
-  CATKIN_DEPENDS roscpp std_msgs hardware_interface controller_interface joint_limits_interface
+  CATKIN_DEPENDS roscpp std_msgs hardware_interface controller_interface joint_limits_interface pods
   DEPENDS system_lib pluginlib
-  CFG_EXTRAS pods.cmake
 )
+
+set(POD_NAME valkyrie_translator)
 
 ###########
 ## Build ##

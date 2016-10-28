@@ -24,6 +24,7 @@
   <depend>joint_limits_interface</depend>
   <depend>pluginlib</depend>
   <depend>controller_interface</depend>
+  <depend>pods</depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>

@@ -88,6 +88,9 @@ namespace valkyrie_translator {
         std::shared_ptr<JointPositionGoalController_LCMHandler> handler_;
 
         std::vector<std::string> joint_names_;
+
+        std::vector<std::string> recv_joint_names_; // received joints from LCM
+
         std::map<std::string, hardware_interface::JointHandle> positionJointHandles_;
         size_t number_of_joint_interfaces_;
 
@@ -266,16 +269,15 @@ namespace valkyrie_translator {
         double dt = (time - last_update_).toSec();
         int64_t utime = (int64_t) (time.toSec() * 1e6);
 
-        // Iterate over all position-controlled joints
-        for (auto iter = positionJointHandles_.begin(); iter != positionJointHandles_.end(); iter++) {
-            std::string joint_name = iter->first;
+        // Iterate over all received joints
+        for (std::string jnt : recv_joint_names_) {
+            const std::string joint_name = jnt;
             double &q = q_measured_[joint_name];
-            q = iter->second.getPosition();
+            q = positionJointHandles_[joint_name].getPosition();
             double &qd = qd_measured_[joint_name];
-            qd = iter->second.getVelocity();
+            qd = positionJointHandles_[joint_name].getVelocity();
 
-            double &q_desired = latest_commands_[iter->first];
-            double &q_delta = q_delta_[joint_name];
+            double &q_desired = latest_commands_[joint_name];
             double &q_start = q_start_[joint_name];
 
             double eta;
@@ -303,7 +305,7 @@ namespace valkyrie_translator {
 //            std::cout << std::endl;
 
             // Write command to joint
-            iter->second.setCommand(q_command_with_position_limits_enforced);
+            positionJointHandles_[joint_name].setCommand(q_command_with_position_limits_enforced);
         }
 
         // Throttle output according to control_state_publish_frequency_
@@ -427,6 +429,8 @@ namespace valkyrie_translator {
         // Reset q_move_time_
         parent_.q_move_time_ = 0.0;
         parent_.last_update_ = ros::Time::now();
+
+        parent_.recv_joint_names_ = msg->joint_name;
 
         // Iterate over all received joints
         for (unsigned int i = 0; i < msg->num_joints; ++i) {

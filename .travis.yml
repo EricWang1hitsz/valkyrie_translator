@@ -20,12 +20,13 @@ install:
 - cd valkyrie-lcm-distro
 - make
 - export VALKYRIE_LCM_DISTRO_PATH=`pwd`
+- mkdir -p $CATKIN_WS_SRC
+- git clone https://github.com/openhumanoids/pods.git $CATKIN_WS_SRC/pods
 script:
 - source /opt/ros/$CI_ROS_DISTRO/setup.bash
 - source $VALKYRIE_LCM_DISTRO_PATH/setup_path.sh
-- mkdir -p $CATKIN_WS_SRC
 - ln -s $TRAVIS_BUILD_DIR $CATKIN_WS_SRC
-- cd $CATKIN_WS_SRC
-- catkin_init_workspace
-- cd ..
-- catkin_make install -DCMAKE_BUILD_TYPE=Release -j4
+- cd $CATKIN_WS
+- catkin config --init --mkdirs --no-install --cmake-args -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_CXX_FLAGS=-std=c++11
+- catkin config --extend /opt/ros/$CI_ROS_DISTRO
+- catkin build -s -j4

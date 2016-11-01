@@ -8,24 +8,23 @@ env:
   - CATKIN_WS=~/catkin_ws
   - CATKIN_WS_SRC=${CATKIN_WS}/src
   - CI_ROS_DISTRO="indigo"
-install:
+before_install:
 - sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu trusty main" > /etc/apt/sources.list.d/ros-latest.list'
 - wget http://packages.ros.org/ros.key -O - | sudo apt-key add -
 - sudo apt-get update -qq
-- sudo apt-get install -qq -y python-rosdep python-catkin-tools freeglut3-dev libgtk2.0-dev
-- sudo rosdep init
-- rosdep update
-- rosdep install --from-paths ./ -i -y --rosdistro $CI_ROS_DISTRO
-- git clone https://github.com/openhumanoids/valkyrie-lcm-distro.git
-- cd valkyrie-lcm-distro
-- make
+- sudo apt-get install -qq -y ros-indigo-ros-base python-catkin-tools ros-indigo-std-msgs ros-indigo-roslint freeglut3-dev libgtk2.0-dev ros-indigo-roscpp ros-indigo-hardware-interface ros-indigo-controller-interface ros-indigo-joint-limits-interface
+- git clone https://github.com/openhumanoids/valkyrie-lcm-distro.git ~/valkyrie-lcm-distro && cd ~/valkyrie-lcm-distro
+- make BUILD_PREFIX=`pwd`/build
 - export VALKYRIE_LCM_DISTRO_PATH=`pwd`
+install:
+- mkdir -p $CATKIN_WS_SRC
+- ln -s $TRAVIS_BUILD_DIR $CATKIN_WS_SRC
+- git clone https://github.com/openhumanoids/pods.git $CATKIN_WS_SRC/pods
 script:
 - source /opt/ros/$CI_ROS_DISTRO/setup.bash
 - source $VALKYRIE_LCM_DISTRO_PATH/setup_path.sh
-- mkdir -p $CATKIN_WS_SRC
-- ln -s $TRAVIS_BUILD_DIR $CATKIN_WS_SRC
-- cd $CATKIN_WS_SRC
-- catkin_init_workspace
-- cd ..
-- catkin_make install -DCMAKE_BUILD_TYPE=Release -j4
+- echo $DISTRO_BASE
+- cd $CATKIN_WS
+- catkin config --init --mkdirs --no-install --cmake-args -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_CXX_FLAGS=-std=c++11
+- catkin config --extend /opt/ros/$CI_ROS_DISTRO
+- catkin build -s -j4

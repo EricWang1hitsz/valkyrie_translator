@@ -12,7 +12,7 @@ before_install:
 - sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu trusty main" > /etc/apt/sources.list.d/ros-latest.list'
 - wget http://packages.ros.org/ros.key -O - | sudo apt-key add -
 - sudo apt-get update -qq
-- sudo apt-get install -qq -y ros-indigo-ros-base python-catkin-tools ros-indigo-std-msgs ros-indigo-roslint freeglut3-dev libgtk2.0-dev
+- sudo apt-get install -qq -y ros-indigo-ros-base python-catkin-tools ros-indigo-std-msgs ros-indigo-roslint freeglut3-dev libgtk2.0-dev ros-indigo-roscpp ros-indigo-hardware-interface ros-indigo-controller-interface ros-indigo-joint-limits-interface
 - git clone https://github.com/openhumanoids/valkyrie-lcm-distro.git ~/valkyrie-lcm-distro && cd ~/valkyrie-lcm-distro
 - make
 - export VALKYRIE_LCM_DISTRO_PATH=`pwd`

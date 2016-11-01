@@ -13,9 +13,9 @@ install:
 - wget http://packages.ros.org/ros.key -O - | sudo apt-key add -
 - sudo apt-get update -qq
 - sudo apt-get install -qq -y python-rosdep python-catkin-tools freeglut3-dev libgtk2.0-dev
-- sudo rosdep init
 - mkdir -p $CATKIN_WS_SRC
 - git clone https://github.com/openhumanoids/pods.git $CATKIN_WS_SRC/pods
+- sudo rosdep init
 - rosdep update
 - rosdep install --from-paths ./ -i -y --rosdistro $CI_ROS_DISTRO
 - git clone https://github.com/openhumanoids/valkyrie-lcm-distro.git

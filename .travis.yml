@@ -23,6 +23,7 @@ install:
 script:
 - source /opt/ros/$CI_ROS_DISTRO/setup.bash
 - source $VALKYRIE_LCM_DISTRO_PATH/setup_path.sh
+- echo $DISTRO_BASE
 - cd $CATKIN_WS
 - catkin config --init --mkdirs --no-install --cmake-args -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_CXX_FLAGS=-std=c++11
 - catkin config --extend /opt/ros/$CI_ROS_DISTRO

@@ -1,13 +1,10 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 2.8.12)
 
 set(ENV{PKG_CONFIG_PATH} $ENV{DISTRO_BASE}/build/lib/pkgconfig:$ENV{PKG_CONFIG_PATH})
-
-# needed for string arrays
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wno-deprecated-declarations")
 
-
-
 project(valkyrie_translator)
+set(POD_NAME valkyrie_translator)
 
 find_package(catkin REQUIRED COMPONENTS
   roscpp
@@ -22,8 +19,6 @@ catkin_package(
   CATKIN_DEPENDS roscpp std_msgs hardware_interface controller_interface joint_limits_interface pods
   DEPENDS system_lib pluginlib
 )
-
-set(POD_NAME valkyrie_translator)
 
 ###########
 ## Build ##

@@ -89,7 +89,7 @@ namespace valkyrie_translator {
 
         std::vector<std::string> joint_names_;
 
-        std::vector<std::string> recv_joint_names_; // received joints from LCM
+        std::vector<std::string> recv_joint_names_;  // Joints to be commanded as received from LCM
 
         std::map<std::string, hardware_interface::JointHandle> positionJointHandles_;
         size_t number_of_joint_interfaces_;
@@ -220,18 +220,18 @@ namespace valkyrie_translator {
 
         position_hw->clearClaims();
         const std::vector<std::string> &positionNames = position_hw->getNames();
-        // initialize command buffer for each joint we found on the HW
+        // Initialize command buffer for each joint we found on the HW
         for (unsigned int i = 0; i < positionNames.size(); i++) {
             if (use_joint_selection &&
-                std::find(joint_names_.begin(), joint_names_.end(), positionNames[i]) == joint_names_.end()){
-                ROS_INFO_STREAM("I see a position interface for " << positionNames[i] << " ... but not using it.");
+                std::find(joint_names_.begin(), joint_names_.end(), positionNames[i]) == joint_names_.end()) {
+                // ROS_INFO_STREAM("I see a position interface for " << positionNames[i] << " ... but not using it.");
                 continue;
             }
 
             try {
                 positionJointHandles_[positionNames[i]] = position_hw->getHandle(positionNames[i]);
                 latest_commands_[positionNames[i]] = 0.0;
-                ROS_INFO_STREAM("I see a position interface for " << positionNames[i] << " and I claimed it.");
+                ROS_INFO_STREAM("Claimed position interface: " << positionNames[i]);
             } catch (const hardware_interface::HardwareInterfaceException& e) {
                 ROS_ERROR_STREAM("Could not retrieve handle for " << positionNames[i] << ": " << e.what());
             }
@@ -240,15 +240,12 @@ namespace valkyrie_translator {
         q_move_time_ = 0;
 
         auto position_hw_claims = position_hw->getClaims();
-        try
-        {
+        try {
             claimed_resources.insert(position_hw_claims.begin(), position_hw_claims.end());
+        } catch (const hardware_interface::HardwareInterfaceException& e) {
+            ROS_ERROR_STREAM("Could not claim position-controlled joints!");
+            return false;
         }
-        catch (const hardware_interface::HardwareInterfaceException& e)
-        {
-            ROS_ERROR_STREAM("Could not claim joints!");
-        }
-
         position_hw->clearClaims();
 
         // success
@@ -269,7 +266,7 @@ namespace valkyrie_translator {
         double dt = (time - last_update_).toSec();
         int64_t utime = (int64_t) (time.toSec() * 1e6);
 
-        // Iterate over all received joints
+        // Iterate over all commanded joints
         for (std::string jnt : recv_joint_names_) {
             const std::string joint_name = jnt;
             double &q = q_measured_[joint_name];
@@ -369,7 +366,9 @@ namespace valkyrie_translator {
 
         unsigned int positionJointIndex = 0;
         for (auto const &joint_name : joint_names_) {
-            if(positionJointIndex>=number_of_joint_interfaces_) break;
+            if (positionJointIndex >= number_of_joint_interfaces_)
+                break;
+
             lcm_pose_msg.joint_name[positionJointIndex] = joint_name;
 
             if (commands_modulate_on_joint_limits_range_){            
@@ -399,7 +398,9 @@ namespace valkyrie_translator {
 
         unsigned int positionJointIndex = 0;
         for (auto const &joint_name : joint_names_) {
-            if(positionJointIndex>=number_of_joint_interfaces_) break;
+            if (positionJointIndex >= number_of_joint_interfaces_)
+                break;
+
             lcm_commanded_msg.joint_name[positionJointIndex] = joint_name;
             lcm_commanded_msg.joint_position[positionJointIndex] = static_cast<float>(q_last_commanded_[joint_name]);
             positionJointIndex++;
@@ -437,8 +438,7 @@ namespace valkyrie_translator {
             auto search = parent_.latest_commands_.find(msg->joint_name[i]);
             if (search != parent_.latest_commands_.end()) {
                 std::string joint_name = msg->joint_name[i];
-                ROS_INFO_STREAM(joint_name << " got new q_desired " << msg->joint_position[i]);
-
+                ROS_INFO_STREAM(joint_name << " received new q_desired " << msg->joint_position[i]);
                 double &q_desired = parent_.latest_commands_[joint_name];
 
 

@@ -80,7 +80,7 @@ namespace valkyrie_translator {
         bool publish_imu_readings_;
         bool publish_separate_force_torque_readings_;
         bool publish_est_robot_state_;
-        bool publishTareValue;
+        bool publish_tare_value_;
     };
 
 
@@ -179,7 +179,7 @@ namespace valkyrie_translator {
         }
 
         // Retrieve the force torque sensor interface
-        publishTareValue = true;
+        publish_tare_value_ = true;
         hardware_interface::ForceTorqueSensorInterface *force_torque_hw = robot_hw->get<hardware_interface::ForceTorqueSensorInterface>();
         if (!force_torque_hw) {
             ROS_ERROR(
@@ -203,9 +203,8 @@ namespace valkyrie_translator {
         // Retrieve parameter whether to publish EST_ROBOT_STATE (robot_state_t)
         if (!controller_nh.getParam("publish_est_robot_state", publish_est_robot_state_))
             publish_est_robot_state_ = true;
-        if(force_torque_names.size()==0)
-        {
-            publishTareValue = false;
+        if (force_torque_names.size() == 0) {
+            publish_tare_value_ = false;
             publish_est_robot_state_ = false;
         }
         ROS_INFO_STREAM("Publishing EST_ROBOT_STATE: " << std::to_string(publish_imu_readings_));
@@ -225,7 +224,8 @@ namespace valkyrie_translator {
             }
 
             const std::vector<std::string> &imu_names = imu_hw->getNames();
-            if(imu_names.size()==0) publish_imu_readings_=false;
+            if (imu_names.size() == 0)
+                publish_imu_readings_ = false;
 
             for (unsigned int i = 0; i < imu_names.size(); i++) {
                 try {
@@ -239,7 +239,8 @@ namespace valkyrie_translator {
         // Retrieve parameter whether to publish separate force-torque sensor readings in addition to EST_ROBOT_STATE
         if (!controller_nh.getParam("publish_separate_force_torque_readings", publish_separate_force_torque_readings_))
             publish_separate_force_torque_readings_ = false;
-        if(force_torque_names.size()==0) publish_separate_force_torque_readings_ = false;
+        if (force_torque_names.size() == 0)
+            publish_separate_force_torque_readings_ = false;
         ROS_INFO_STREAM("Publishing separate FORCE_TORQUE readings: " <<
                         std::to_string(publish_separate_force_torque_readings_));
 
@@ -266,8 +267,8 @@ namespace valkyrie_translator {
         if (publish_separate_force_torque_readings_)
             publishForceTorqueReadings(utime);
 
-        if((time.toSec() - lastTareValuePublishTime) > 1){
-            if(publishTareValue) publishForceTorqueTareValues(utime);
+        if ((time.toSec() - lastTareValuePublishTime) > 1){
+            if (publish_tare_value_) publishForceTorqueTareValues(utime);
             lastTareValuePublishTime = time.toSec();
         }
 

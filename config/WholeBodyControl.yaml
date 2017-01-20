@@ -27,14 +27,14 @@ LCM2ROSControl:
       - leftShoulderRoll
       - leftShoulderYaw
       - leftElbowPitch
-      - leftForearm
+      - leftForearmYaw
       - leftWristRoll
       - leftWristPitch
       - rightShoulderPitch
       - rightShoulderRoll
       - rightShoulderYaw
       - rightElbowPitch
-      - rightForearm
+      - rightForearmYaw
       - rightWristRoll
       - rightWristPitch
 
@@ -46,12 +46,12 @@ LCM2ROSControl:
         has_effort_limits: true
         max_effort: 100.0
 
-      leftShoulderRoll:
-        has_position_limits: true
-        min_position: -1.51
-        max_position: 1.5
-        has_effort_limits: true
-        max_effort: 100.0
+      # leftShoulderRoll:
+      #   has_position_limits: true
+      #   min_position: -1.51
+      #   max_position: 1.5
+      #   has_effort_limits: true
+      #   max_effort: 100.0
 
     gain_overrides:
       freeze:

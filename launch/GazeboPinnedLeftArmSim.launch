@@ -1,0 +1,31 @@
+<launch>
+  <!-- these are the arguments you can pass this launch file, for example paused:=true -->
+  <arg name="paused" default="true"/>
+  <arg name="use_sim_time" default="true"/>
+  <arg name="gui" default="true"/>
+  <arg name="headless" default="false"/>
+  <arg name="debug" default="false"/>
+  <arg name="schedule_file" default="robonet_schedules/main_gazebo.yaml" />
+  <arg name="model_file" default="model/urdf/valkyrie_sim_pinned_wxm.urdf" />
+  <arg name="controller_manager_looprate" default="500" />
+
+  <param name="robot_description" textfile="$(find val_description)/$(arg model_file)"/>
+
+    <node name="$(anon smtcore)" pkg="shared_memory_transport" type="smtcore" />
+
+    <!-- synapse -->
+    <node name="$(anon control.py)" pkg="robonet_tools" type="control" args="-d -r $(find val_config_files)/$(arg schedule_file) --" />
+
+    <!-- delayed_rttlua, so synapse has time to register topics -->
+    <node name="$(anon controller_manager)" pkg="val_deploy" type="delayed_roslaunch.sh" args="4 val_deploy val_control_sim.launch controller_manager_looprate:=$(arg controller_manager_looprate)" output="screen"/>
+
+  <!-- We resume the logic in empty_world.launch, changing only the name of the world to be launched -->
+  <include file="$(find val_gazebo)/launch/val_empty_world.launch">
+    <arg name="paused" value="$(arg paused)"/>
+      <arg name="use_sim_time" value="$(arg use_sim_time)"/>
+      <arg name="gui" value="$(arg gui)" />
+      <arg name="headless" value="$(arg headless)"/>
+      <arg name="debug" value="$(arg debug)" />
+  </include>
+
+</launch>

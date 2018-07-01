@@ -17,7 +17,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
   LIBRARIES LCM2ROSControl JointPositionGoalController JointStatePublisher
   CATKIN_DEPENDS roscpp std_msgs hardware_interface controller_interface joint_limits_interface pods
-  DEPENDS system_lib pluginlib
+  DEPENDS pluginlib
 )
 
 ###########

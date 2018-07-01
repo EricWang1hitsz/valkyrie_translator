@@ -27,8 +27,6 @@
 
 
 namespace valkyrie_translator {
-    class JointStatePublisher;
-
     class JointStatePublisher : public controller_interface::Controller<hardware_interface::JointStateInterface> {
     public:
         JointStatePublisher() { }
@@ -47,7 +45,7 @@ namespace valkyrie_translator {
     protected:
         bool initRequest(hardware_interface::RobotHW *robot_hw,
                          ros::NodeHandle &root_nh, ros::NodeHandle &controller_nh,
-                         std::set<std::string> &claimed_resources) override;
+                         std::set<std::string> &claimed_resources);
 
     private:
         void initializeLCMSubscriptions();

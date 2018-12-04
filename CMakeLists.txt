@@ -28,6 +28,8 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
+add_definitions(--std=c++11)
+
 ######################################################
 add_library(LCM2ROSControl src/LCM2ROSControl.cpp)
 target_link_libraries(LCM2ROSControl ${catkin_LIBRARIES} )
